@@ -217,7 +217,7 @@ impl TerminalWidget {
             }
         }
 
-        //log::debug!("Processing CSI sequence: {}", sequence);
+        debug!("Processing CSI sequence: {sequence}");
 
         // Process the CSI sequence
         match sequence.as_str() {

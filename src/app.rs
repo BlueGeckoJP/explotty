@@ -74,7 +74,7 @@ impl App {
                             output.extend_from_slice(&buffer[..n]);
                         }
                         Err(e) => {
-                            eprintln!("Error reading from PTY: {e}");
+                            error!("Error reading from PTY: {e}");
                             break;
                         }
                     }
@@ -107,7 +107,7 @@ impl App {
                     if let Some(data) = data_to_write
                         && let Err(e) = writer.write_all(&data)
                     {
-                        eprintln!("Error writing to PTY: {e}");
+                        error!("Error writing to PTY: {e}");
                         break;
                     }
 
@@ -147,7 +147,7 @@ impl App {
                 pixel_height: 0,
             };
             if let Err(e) = pty_pair.master.resize(new_size) {
-                eprintln!("Failed to resize PTY: {e}");
+                error!("Failed to resize PTY: {e}");
             }
         }
     }

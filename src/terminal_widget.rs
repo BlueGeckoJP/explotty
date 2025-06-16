@@ -350,7 +350,7 @@ impl TerminalWidget {
                 let params: Vec<&str> = sequence.trim_end_matches('m').split(';').collect();
                 for param in params {
                     match param {
-                        "0" => {
+                        "0" | "00" => {
                             // Reset all attributes
                             self.buffer.current_fg_color = Color32::WHITE;
                             self.buffer.current_bg_color = Color32::TRANSPARENT;
@@ -358,8 +358,8 @@ impl TerminalWidget {
                             self.buffer.current_underline = false;
                             self.buffer.current_italic = false;
                         }
-                        "1" => self.buffer.current_bold = true,
-                        "2" => {
+                        "1" | "01" => self.buffer.current_bold = true,
+                        "2" | "02" => {
                             let current_color = self.buffer.current_fg_color;
                             self.buffer.current_fg_color = Color32::from_rgb(
                                 (current_color.r() as u16 * 4 / 5).min(255) as u8,
@@ -367,12 +367,12 @@ impl TerminalWidget {
                                 (current_color.b() as u16 * 4 / 5).min(255) as u8,
                             );
                         }
-                        "3" => self.buffer.current_italic = true,
-                        "4" => self.buffer.current_underline = true,
-                        // "5" => Blink
-                        // "7" => Reverse
-                        // "8" => Hidden
-                        // "9" => Strikethrough
+                        "3" | "03" => self.buffer.current_italic = true,
+                        "4" | "04" => self.buffer.current_underline = true,
+                        // "5" | "05" => Blink
+                        // "7" | "07" => Reverse
+                        // "8" | "08" => Hidden
+                        // "9" | "09" => Strikethrough
                         _ if param.contains("30") => {
                             self.buffer.current_fg_color = Color32::BLACK;
                         }
@@ -461,7 +461,9 @@ impl TerminalWidget {
                                 self.buffer.current_bg_color = Color32::from_rgb(r, g, b);
                             }
                         }
-                        _ => {}
+                        _ => {
+                            warn!("Unsupported SGR parameter: {param}");
+                        }
                     }
                 }
             }
@@ -483,7 +485,9 @@ impl TerminalWidget {
             // Not implemented yet
 
             // Other CSI sequences
-            _ => {}
+            _ => {
+                warn!("Unhandled CSI sequence: {sequence}");
+            }
         }
     }
 }

@@ -17,6 +17,8 @@ pub struct TerminalBuffer {
     pub current_bold: bool,
     pub current_underline: bool,
     pub current_italic: bool,
+    pub saved_cursor_x: usize,
+    pub saved_cursor_y: usize,
 }
 
 impl TerminalBuffer {
@@ -39,6 +41,8 @@ impl TerminalBuffer {
             current_bold: false,
             current_underline: false,
             current_italic: false,
+            saved_cursor_x: 0,
+            saved_cursor_y: 0,
         }
     }
 
@@ -127,5 +131,9 @@ impl TerminalBuffer {
     pub fn move_cursor(&mut self, x: usize, y: usize) {
         self.cursor_x = x.min(self.width.saturating_sub(1));
         self.cursor_y = y.min(self.height.saturating_sub(1));
+    }
+
+    pub fn carriage_return(&mut self) {
+        self.cursor_x = 0;
     }
 }

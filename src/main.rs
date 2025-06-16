@@ -1,46 +1,50 @@
-use std::thread;
+mod terminal_buffer;
+mod terminal_cell;
+mod terminal_widget;
 
-use portable_pty::{CommandBuilder, PtySize, native_pty_system};
+use eframe::egui;
+use portable_pty::{Child, PtyPair};
 
-fn main() {
-    let pty_system = native_pty_system();
+use crate::terminal_widget::TerminalWidget;
 
-    let mut pair = pty_system
-        .openpty(PtySize {
-            rows: 24,
-            cols: 80,
-            pixel_width: 0,
-            pixel_height: 0,
-        })
-        .unwrap();
+fn main() -> eframe::Result {
+    let options = eframe::NativeOptions {
+        viewport: eframe::egui::ViewportBuilder::default()
+            .with_title("Portable PTY Example")
+            .with_inner_size(eframe::egui::vec2(800.0, 600.0)),
+        ..Default::default()
+    };
 
-    let cmd = CommandBuilder::new("bash");
-    let child = pair.slave.spawn_command(cmd).unwrap();
-
-    let mut reader = pair.master.try_clone_reader().unwrap();
-
-    thread::spawn(move || {
-        let mut buffer = [0; 1024];
-        loop {
-            match reader.read(&mut buffer) {
-                Ok(0) => break, // EOF
-                Ok(n) => {
-                    let output = String::from_utf8_lossy(&buffer[..n]);
-                    print!("{output}");
-                }
-                Err(e) => {
-                    eprintln!("Error reading from PTY: {e}");
-                    break;
-                }
-            }
-        }
-    });
-
-    writeln!(
-        pair.master.take_writer().unwrap(),
-        "echo 'Hello from the PTY!'"
+    eframe::run_native(
+        "explotty",
+        options,
+        Box::new(|cc| Ok(Box::new(App::new(cc)))),
     )
-    .unwrap();
+}
 
-    loop {}
+struct App {
+    terminal_widget: TerminalWidget,
+    pty_pair: Option<PtyPair>,
+    child: Option<Box<dyn Child + Send + Sync>>,
+}
+
+impl Default for App {
+    fn default() -> Self {
+        Self {}
+    }
+}
+
+impl App {
+    fn new(_cc: &eframe::CreationContext<'_>) -> Self {
+        App::default()
+    }
+}
+
+impl eframe::App for App {
+    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        egui::CentralPanel::default().show(ctx, |ui| {
+            ui.label("This is a simple example of using portable_pty with eframe.");
+            if ui.button("Spawn PTY").clicked() {}
+        });
+    }
 }

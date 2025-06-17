@@ -135,8 +135,8 @@ impl TerminalBuffer {
     ) {
         let start_x = start_pos.map_or(0, |(x, _)| x);
         let start_y = start_pos.map_or(0, |(_, y)| y);
-        let end_x = end_pos.map_or(self.width, |(x, _)| x);
-        let end_y = end_pos.map_or(self.height, |(_, y)| y);
+        let end_x = end_pos.map_or(self.width - 1, |(x, _)| x);
+        let end_y = end_pos.map_or(self.height - 1, |(_, y)| y);
 
         for y in start_y..=end_y {
             if y < self.height {

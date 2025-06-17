@@ -364,9 +364,7 @@ impl TerminalWidget {
                         if let Some(start_pos) = s.find(delimiter) {
                             // Extract the part after delimiter
                             let after_delimiter = &s[start_pos + delimiter.len()..];
-                            println!("After delimiter: {after_delimiter}");
                             let parts: Vec<&str> = after_delimiter.split(';').take(3).collect();
-                            println!("Parts: {parts:?}");
 
                             // Remove delimiter and the parts from the sequence
                             let mut to_remove = delimiter.to_string();
@@ -378,29 +376,41 @@ impl TerminalWidget {
                                     to_remove.push(';');
                                 }
                             }
-                            println!("To remove: {to_remove}");
 
                             let new_sequence = sequence.replace(&to_remove, "");
-                            println!("New sequence: {new_sequence}");
 
                             // Convert the RGB values to Color32
                             let rgb = parts
                                 .iter()
                                 .map(|x| x.parse::<u8>().unwrap_or(0))
                                 .collect::<Vec<u8>>();
-                            println!("RGB: {rgb:?}");
 
                             self.buffer.current_fg_color = Color32::from_rgb(
                                 rgb.first().cloned().unwrap_or(0),
                                 rgb.get(1).cloned().unwrap_or(0),
                                 rgb.get(2).cloned().unwrap_or(0),
                             );
-                            println!("Current FG Color: {:?}", self.buffer.current_fg_color);
 
                             sequence = new_sequence;
                         }
                     }
-                    s if s.contains("38;5;") => {}
+                    s if s.contains("38;5;") => {
+                        let delimiter = "38;5;";
+                        if let Some(start_pos) = s.find(delimiter) {
+                            // Extract the part after delimiter
+                            let after_delimiter = &s[start_pos + delimiter.len()..];
+                            if let Some(color_index_str) = after_delimiter.split(';').next() {
+                                if let Ok(color_index) = color_index_str.parse::<u8>() {
+                                    self.buffer.current_fg_color =
+                                        process_256_color_palette(color_index);
+                                }
+
+                                // Remove the color index from the sequence
+                                sequence =
+                                    sequence.replace(&format!("{delimiter}{color_index_str}"), "");
+                            }
+                        }
+                    }
                     s if s.contains("48;2;") => {
                         let delimiter = "48;2;";
                         if let Some(start_pos) = s.find(delimiter) {
@@ -436,7 +446,23 @@ impl TerminalWidget {
                             sequence = new_sequence;
                         }
                     }
-                    s if s.contains("48;5;") => {}
+                    s if s.contains("48;5;") => {
+                        let delimiter = "48;5;";
+                        if let Some(start_pos) = s.find(delimiter) {
+                            // Extract the part after delimiter
+                            let after_delimiter = &s[start_pos + delimiter.len()..];
+                            if let Some(color_index_str) = after_delimiter.split(';').next() {
+                                if let Ok(color_index) = color_index_str.parse::<u8>() {
+                                    self.buffer.current_bg_color =
+                                        process_256_color_palette(color_index);
+                                }
+
+                                // Remove the color index from the sequence
+                                sequence =
+                                    sequence.replace(&format!("{delimiter}{color_index_str}"), "");
+                            }
+                        }
+                    }
 
                     _ => {}
                 }

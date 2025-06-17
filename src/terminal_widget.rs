@@ -1,6 +1,6 @@
 use eframe::egui::{self, Color32, FontId, Pos2, Rect, TextFormat, text::LayoutJob};
 
-use crate::terminal_buffer::TerminalBuffer;
+use crate::{terminal_buffer::TerminalBuffer, terminal_cell::TerminalCell};
 
 pub struct TerminalWidget {
     pub buffer: TerminalBuffer,
@@ -613,7 +613,18 @@ impl TerminalWidget {
             // Insert/delete lines/characters
             // ch if ch.ends_with('L') => {} // Insert lines
             // ch if ch.ends_with('M') => {} // Delete lines
-            // ch if ch.ends_with('P') => {} // Delete characters
+            ch if ch.ends_with('P') => {
+                // Delete characters
+                let num = sequence.trim_end_matches('P').parse::<usize>().unwrap_or(1);
+                if self.buffer.cursor_x < self.buffer.width {
+                    for _ in 0..num {
+                        if self.buffer.cursor_x < self.buffer.width {
+                            self.buffer.cells[self.buffer.cursor_y].remove(self.buffer.cursor_x);
+                            self.buffer.cells[self.buffer.cursor_y].push(TerminalCell::default());
+                        }
+                    }
+                }
+            }
             // ch if ch.ends_with('X') => {} // Erase characters
             // ch if ch.ends_with('@') => {} // Insert characters
 

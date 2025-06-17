@@ -128,6 +128,27 @@ impl TerminalBuffer {
         self.cursor_y = 0;
     }
 
+    pub fn clear_range(
+        &mut self,
+        start_pos: Option<(usize, usize)>,
+        end_pos: Option<(usize, usize)>,
+    ) {
+        let start_x = start_pos.map_or(0, |(x, _)| x);
+        let start_y = start_pos.map_or(0, |(_, y)| y);
+        let end_x = end_pos.map_or(self.width, |(x, _)| x);
+        let end_y = end_pos.map_or(self.height, |(_, y)| y);
+
+        for y in start_y..=end_y {
+            if y < self.height {
+                for x in start_x..=end_x {
+                    if x < self.width {
+                        self.cells[y][x] = TerminalCell::default();
+                    }
+                }
+            }
+        }
+    }
+
     pub fn move_cursor(&mut self, x: usize, y: usize) {
         self.cursor_x = x.min(self.width.saturating_sub(1));
         self.cursor_y = y.min(self.height.saturating_sub(1));

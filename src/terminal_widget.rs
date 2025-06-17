@@ -307,10 +307,17 @@ impl TerminalWidget {
             ch if ch.ends_with('J') => {
                 let num = sequence.trim_end_matches('J').parse::<usize>().unwrap_or(0);
                 match num {
-                    0 => self.buffer.clear_screen(),
-                    // 1 => Erase entire screen (may include scroll buffer),
-                    // 2 => Erase the entire screen, including the scroll buffer (Linux 3.0 and later)
-                    _ => self.buffer.scroll_region_top = self.buffer.cursor_y,
+                    0 => self
+                        .buffer
+                        .clear_range(Some((self.buffer.cursor_x, self.buffer.cursor_y)), None),
+                    1 => self
+                        .buffer
+                        .clear_range(None, Some((self.buffer.cursor_x, self.buffer.cursor_y))),
+                    2 => self.buffer.clear_screen(),
+                    3 => self.buffer.clear_screen(), // Clear entire screen (including scrollback) (Not implemented yet, and same behaviour as 2)
+                    _ => {
+                        warn!("Unsupported erase in display parameter: {num}");
+                    }
                 }
             }
 

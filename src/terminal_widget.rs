@@ -535,6 +535,9 @@ impl TerminalWidget {
                         "37" => {
                             self.buffer.current_fg_color = Color32::WHITE;
                         }
+                        "39" => {
+                            self.buffer.current_fg_color = Color32::WHITE;
+                        }
                         "40" => {
                             self.buffer.current_bg_color = Color32::BLACK;
                         }
@@ -558,6 +561,9 @@ impl TerminalWidget {
                         }
                         "47" => {
                             self.buffer.current_bg_color = Color32::WHITE;
+                        }
+                        "49" => {
+                            self.buffer.current_bg_color = Color32::TRANSPARENT;
                         }
 
                         "90" => {

@@ -150,6 +150,18 @@ impl TerminalWidget {
                         egui::Key::Tab => {
                             output.extend_from_slice(b"\t");
                         }
+                        egui::Key::ArrowUp => {
+                            output.extend_from_slice(b"\x1b[A");
+                        }
+                        egui::Key::ArrowDown => {
+                            output.extend_from_slice(b"\x1b[B");
+                        }
+                        egui::Key::ArrowLeft => {
+                            output.extend_from_slice(b"\x1b[D");
+                        }
+                        egui::Key::ArrowRight => {
+                            output.extend_from_slice(b"\x1b[C");
+                        }
                         _ => {}
                     },
                     egui::Event::Text(text) => {

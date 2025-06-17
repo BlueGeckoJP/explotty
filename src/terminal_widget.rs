@@ -143,17 +143,12 @@ impl TerminalWidget {
                     } => match key {
                         egui::Key::Enter => {
                             output.extend_from_slice(b"\r");
-                            self.buffer.new_line();
                         }
                         egui::Key::Backspace => {
                             output.extend_from_slice(b"\x08");
-                            self.buffer.backspace();
                         }
                         egui::Key::Tab => {
                             output.extend_from_slice(b"\t");
-                            for _ in 0..4 {
-                                self.buffer.put_char(' ');
-                            }
                         }
                         _ => {}
                     },

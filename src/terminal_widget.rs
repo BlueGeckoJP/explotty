@@ -1,8 +1,4 @@
-use eframe::{
-    egui::{self, Color32, FontId, Pos2, Rect, TextFormat, text::LayoutJob},
-    epaint::color,
-};
-use env_logger::fmt::style::Color;
+use eframe::egui::{self, Color32, FontId, Pos2, Rect, TextFormat, text::LayoutJob};
 
 use crate::terminal_buffer::TerminalBuffer;
 

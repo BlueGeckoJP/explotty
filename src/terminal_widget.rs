@@ -511,101 +511,101 @@ impl TerminalWidget {
                         // "7" | "07" => Reverse
                         // "8" | "08" => Hidden
                         // "9" | "09" => Strikethrough
-                        _ if param.contains("30") => {
+                        "30" => {
                             self.buffer.current_fg_color = Color32::BLACK;
                         }
-                        _ if param.contains("31") => {
+                        "31" => {
                             self.buffer.current_fg_color = Color32::RED;
                         }
-                        _ if param.contains("32") => {
+                        "32" => {
                             self.buffer.current_fg_color = Color32::GREEN;
                         }
-                        _ if param.contains("33") => {
+                        "33" => {
                             self.buffer.current_fg_color = Color32::YELLOW;
                         }
-                        _ if param.contains("34") => {
+                        "34" => {
                             self.buffer.current_fg_color = Color32::BLUE;
                         }
-                        _ if param.contains("35") => {
+                        "35" => {
                             self.buffer.current_fg_color = Color32::MAGENTA;
                         }
-                        _ if param.contains("36") => {
+                        "36" => {
                             self.buffer.current_fg_color = Color32::CYAN;
                         }
-                        _ if param.contains("37") => {
+                        "37" => {
                             self.buffer.current_fg_color = Color32::WHITE;
                         }
-                        _ if param.contains("40") => {
+                        "40" => {
                             self.buffer.current_bg_color = Color32::BLACK;
                         }
-                        _ if param.contains("41") => {
+                        "41" => {
                             self.buffer.current_bg_color = Color32::RED;
                         }
-                        _ if param.contains("42") => {
+                        "42" => {
                             self.buffer.current_bg_color = Color32::GREEN;
                         }
-                        _ if param.contains("43") => {
+                        "43" => {
                             self.buffer.current_bg_color = Color32::YELLOW;
                         }
-                        _ if param.contains("44") => {
+                        "44" => {
                             self.buffer.current_bg_color = Color32::BLUE;
                         }
-                        _ if param.contains("45") => {
+                        "45" => {
                             self.buffer.current_bg_color = Color32::MAGENTA;
                         }
-                        _ if param.contains("46") => {
+                        "46" => {
                             self.buffer.current_bg_color = Color32::CYAN;
                         }
-                        _ if param.contains("47") => {
+                        "47" => {
                             self.buffer.current_bg_color = Color32::WHITE;
                         }
 
-                        _ if param.contains("90") => {
+                        "90" => {
                             self.buffer.current_fg_color = to_bright(Color32::BLACK);
                         }
-                        _ if param.contains("91") => {
+                        "91" => {
                             self.buffer.current_fg_color = to_bright(Color32::RED);
                         }
-                        _ if param.contains("92") => {
+                        "92" => {
                             self.buffer.current_fg_color = to_bright(Color32::GREEN);
                         }
-                        _ if param.contains("93") => {
+                        "93" => {
                             self.buffer.current_fg_color = to_bright(Color32::YELLOW);
                         }
-                        _ if param.contains("94") => {
+                        "94" => {
                             self.buffer.current_fg_color = to_bright(Color32::BLUE);
                         }
-                        _ if param.contains("95") => {
+                        "95" => {
                             self.buffer.current_fg_color = to_bright(Color32::MAGENTA);
                         }
-                        _ if param.contains("96") => {
+                        "96" => {
                             self.buffer.current_fg_color = to_bright(Color32::CYAN);
                         }
-                        _ if param.contains("97") => {
+                        "97" => {
                             self.buffer.current_fg_color = to_bright(Color32::WHITE);
                         }
-                        _ if param.contains("100") => {
+                        "100" => {
                             self.buffer.current_bg_color = to_bright(Color32::BLACK);
                         }
-                        _ if param.contains("101") => {
+                        "101" => {
                             self.buffer.current_bg_color = to_bright(Color32::RED);
                         }
-                        _ if param.contains("102") => {
+                        "102" => {
                             self.buffer.current_bg_color = to_bright(Color32::GREEN);
                         }
-                        _ if param.contains("103") => {
+                        "103" => {
                             self.buffer.current_bg_color = to_bright(Color32::YELLOW);
                         }
-                        _ if param.contains("104") => {
+                        "104" => {
                             self.buffer.current_bg_color = to_bright(Color32::BLUE);
                         }
-                        _ if param.contains("105") => {
+                        "105" => {
                             self.buffer.current_bg_color = to_bright(Color32::MAGENTA);
                         }
-                        _ if param.contains("106") => {
+                        "106" => {
                             self.buffer.current_bg_color = to_bright(Color32::CYAN);
                         }
-                        _ if param.contains("107") => {
+                        "107" => {
                             self.buffer.current_bg_color = to_bright(Color32::WHITE);
                         }
 

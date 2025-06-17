@@ -270,16 +270,16 @@ impl TerminalWidget {
             ch if ch.ends_with('H') || ch.ends_with('f') => {
                 // Cursor Position (CSI H or CSI f)
                 let parts: Vec<&str> = sequence.trim_end_matches(['H', 'f']).split(';').collect();
-                let x = parts
+                let row = parts
                     .first()
                     .and_then(|s| s.parse::<usize>().ok())
                     .unwrap_or(1);
-                let y = parts
+                let col = parts
                     .get(1)
                     .and_then(|s| s.parse::<usize>().ok())
                     .unwrap_or(1);
                 self.buffer
-                    .move_cursor(x.saturating_sub(1), y.saturating_sub(1));
+                    .move_cursor(col.saturating_sub(1), row.saturating_sub(1));
             }
 
             // Cursor Control - History of Cursor Position

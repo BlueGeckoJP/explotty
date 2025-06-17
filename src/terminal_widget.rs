@@ -353,20 +353,108 @@ impl TerminalWidget {
 
             // Select Graphic Rendition (SGR)
             ch if ch.ends_with('m') => {
+                let original_sequence = sequence.clone();
+                let mut sequence = sequence.trim_end_matches('m').to_string();
+
                 // Process 38 and 48 for foreground and background colors first
                 match &sequence {
-                    s if s.contains("38;2") => {}
-                    s if s.contains("38;5") => {}
-                    s if s.contains("48;2") => {}
-                    s if s.contains("48;5") => {}
+                    // Handle 24-bit color foreground color
+                    s if s.contains("38;2;") => {
+                        let delimiter = "38;2;";
+                        if let Some(start_pos) = s.find(delimiter) {
+                            // Extract the part after delimiter
+                            let after_delimiter = &s[start_pos + delimiter.len()..];
+                            println!("After delimiter: {after_delimiter}");
+                            let parts: Vec<&str> = after_delimiter.split(';').take(3).collect();
+                            println!("Parts: {parts:?}");
+
+                            // Remove delimiter and the parts from the sequence
+                            let mut to_remove = delimiter.to_string();
+                            for (i, part) in parts.iter().enumerate() {
+                                to_remove.push_str(part);
+                                if i < parts.len() - 1
+                                    || after_delimiter.split(';').nth(3).is_some()
+                                {
+                                    to_remove.push(';');
+                                }
+                            }
+                            println!("To remove: {to_remove}");
+
+                            let new_sequence = sequence.replace(&to_remove, "");
+                            println!("New sequence: {new_sequence}");
+
+                            // Convert the RGB values to Color32
+                            let rgb = parts
+                                .iter()
+                                .map(|x| x.parse::<u8>().unwrap_or(0))
+                                .collect::<Vec<u8>>();
+                            println!("RGB: {rgb:?}");
+
+                            self.buffer.current_fg_color = Color32::from_rgb(
+                                rgb.first().cloned().unwrap_or(0),
+                                rgb.get(1).cloned().unwrap_or(0),
+                                rgb.get(2).cloned().unwrap_or(0),
+                            );
+                            println!("Current FG Color: {:?}", self.buffer.current_fg_color);
+
+                            sequence = new_sequence;
+                        }
+                    }
+                    s if s.contains("38;5;") => {}
+                    s if s.contains("48;2;") => {
+                        let delimiter = "48;2;";
+                        if let Some(start_pos) = s.find(delimiter) {
+                            // Extract the part after delimiter
+                            let after_delimiter = &s[start_pos + delimiter.len()..];
+                            let parts: Vec<&str> = after_delimiter.split(';').take(3).collect();
+
+                            // Remove delimiter and the parts from the sequence
+                            let mut to_remove = delimiter.to_string();
+                            for (i, part) in parts.iter().enumerate() {
+                                to_remove.push_str(part);
+                                if i < parts.len() - 1
+                                    || after_delimiter.split(';').nth(3).is_some()
+                                {
+                                    to_remove.push(';');
+                                }
+                            }
+
+                            let new_sequence = sequence.replace(&to_remove, "");
+
+                            // Convert the RGB values to Color32
+                            let rgb = parts
+                                .iter()
+                                .map(|x| x.parse::<u8>().unwrap_or(0))
+                                .collect::<Vec<u8>>();
+
+                            self.buffer.current_bg_color = Color32::from_rgb(
+                                rgb.first().cloned().unwrap_or(0),
+                                rgb.get(1).cloned().unwrap_or(0),
+                                rgb.get(2).cloned().unwrap_or(0),
+                            );
+
+                            sequence = new_sequence;
+                        }
+                    }
+                    s if s.contains("48;5;") => {}
 
                     _ => {}
                 }
 
-                let params: Vec<&str> = sequence.trim_end_matches('m').split(';').collect();
+                // \e[m process
+                if original_sequence == "m" {
+                    self.buffer.current_fg_color = Color32::WHITE;
+                    self.buffer.current_bg_color = Color32::TRANSPARENT;
+                    self.buffer.current_bold = false;
+                    self.buffer.current_underline = false;
+                    self.buffer.current_italic = false;
+                    return;
+                }
+
+                let params: Vec<&str> = sequence.split(';').collect();
                 for param in params {
                     match param {
-                        "0" | "00" | "" => {
+                        "0" | "00" => {
                             // Reset all attributes
                             self.buffer.current_fg_color = Color32::WHITE;
                             self.buffer.current_bg_color = Color32::TRANSPARENT;
@@ -389,7 +477,6 @@ impl TerminalWidget {
                         // "7" | "07" => Reverse
                         // "8" | "08" => Hidden
                         // "9" | "09" => Strikethrough
-
                         _ if param.contains("30") => {
                             self.buffer.current_fg_color = Color32::BLACK;
                         }

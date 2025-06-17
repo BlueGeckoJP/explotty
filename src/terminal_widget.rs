@@ -615,6 +615,7 @@ impl TerminalWidget {
                             self.buffer.current_bg_color = to_bright(Color32::WHITE);
                         }
 
+                        "" => {}
                         _ => {
                             warn!("Unsupported SGR parameter: {param}");
                         }

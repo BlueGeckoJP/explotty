@@ -366,7 +366,7 @@ impl TerminalWidget {
                 let params: Vec<&str> = sequence.trim_end_matches('m').split(';').collect();
                 for param in params {
                     match param {
-                        "0" | "00" => {
+                        "0" | "00" | "" => {
                             // Reset all attributes
                             self.buffer.current_fg_color = Color32::WHITE;
                             self.buffer.current_bg_color = Color32::TRANSPARENT;
@@ -389,6 +389,7 @@ impl TerminalWidget {
                         // "7" | "07" => Reverse
                         // "8" | "08" => Hidden
                         // "9" | "09" => Strikethrough
+
                         _ if param.contains("30") => {
                             self.buffer.current_fg_color = Color32::BLACK;
                         }
@@ -413,70 +414,80 @@ impl TerminalWidget {
                         _ if param.contains("37") => {
                             self.buffer.current_fg_color = Color32::WHITE;
                         }
-                        _ if param.starts_with("38;5;") => {
-                            // 256-color foreground
-                            if let Ok(color_index) = param[5..].parse::<u8>() {
-                                self.buffer.current_fg_color =
-                                    Color32::from_rgb(color_index, color_index, color_index);
-                            }
-                        }
-                        _ if param.starts_with("38;2;") => {
-                            // 24bit RGB foreground
-                            let parts: Vec<&str> = param[5..].split(';').collect();
-                            if parts.len() == 3
-                                && let (Ok(r), Ok(g), Ok(b)) = (
-                                    parts[0].parse::<u8>(),
-                                    parts[1].parse::<u8>(),
-                                    parts[2].parse::<u8>(),
-                                )
-                            {
-                                self.buffer.current_fg_color = Color32::from_rgb(r, g, b);
-                            }
-                        }
-                        _ if param.starts_with("40") => {
+                        _ if param.contains("40") => {
                             self.buffer.current_bg_color = Color32::BLACK;
                         }
-                        _ if param.starts_with("41") => {
+                        _ if param.contains("41") => {
                             self.buffer.current_bg_color = Color32::RED;
                         }
-                        _ if param.starts_with("42") => {
+                        _ if param.contains("42") => {
                             self.buffer.current_bg_color = Color32::GREEN;
                         }
-                        _ if param.starts_with("43") => {
+                        _ if param.contains("43") => {
                             self.buffer.current_bg_color = Color32::YELLOW;
                         }
-                        _ if param.starts_with("44") => {
+                        _ if param.contains("44") => {
                             self.buffer.current_bg_color = Color32::BLUE;
                         }
-                        _ if param.starts_with("45") => {
+                        _ if param.contains("45") => {
                             self.buffer.current_bg_color = Color32::MAGENTA;
                         }
-                        _ if param.starts_with("46") => {
+                        _ if param.contains("46") => {
                             self.buffer.current_bg_color = Color32::CYAN;
                         }
-                        _ if param.starts_with("47") => {
+                        _ if param.contains("47") => {
                             self.buffer.current_bg_color = Color32::WHITE;
                         }
-                        _ if param.starts_with("48;5;") => {
-                            // 256-color background
-                            if let Ok(color_index) = param[5..].parse::<u8>() {
-                                self.buffer.current_bg_color =
-                                    Color32::from_rgb(color_index, color_index, color_index);
-                            }
+
+                        _ if param.contains("90") => {
+                            self.buffer.current_fg_color = to_bright(Color32::BLACK);
                         }
-                        _ if param.starts_with("48;2;") => {
-                            // 24bit RGB background
-                            let parts: Vec<&str> = param[5..].split(';').collect();
-                            if parts.len() == 3
-                                && let (Ok(r), Ok(g), Ok(b)) = (
-                                    parts[0].parse::<u8>(),
-                                    parts[1].parse::<u8>(),
-                                    parts[2].parse::<u8>(),
-                                )
-                            {
-                                self.buffer.current_bg_color = Color32::from_rgb(r, g, b);
-                            }
+                        _ if param.contains("91") => {
+                            self.buffer.current_fg_color = to_bright(Color32::RED);
                         }
+                        _ if param.contains("92") => {
+                            self.buffer.current_fg_color = to_bright(Color32::GREEN);
+                        }
+                        _ if param.contains("93") => {
+                            self.buffer.current_fg_color = to_bright(Color32::YELLOW);
+                        }
+                        _ if param.contains("94") => {
+                            self.buffer.current_fg_color = to_bright(Color32::BLUE);
+                        }
+                        _ if param.contains("95") => {
+                            self.buffer.current_fg_color = to_bright(Color32::MAGENTA);
+                        }
+                        _ if param.contains("96") => {
+                            self.buffer.current_fg_color = to_bright(Color32::CYAN);
+                        }
+                        _ if param.contains("97") => {
+                            self.buffer.current_fg_color = to_bright(Color32::WHITE);
+                        }
+                        _ if param.contains("100") => {
+                            self.buffer.current_bg_color = to_bright(Color32::BLACK);
+                        }
+                        _ if param.contains("101") => {
+                            self.buffer.current_bg_color = to_bright(Color32::RED);
+                        }
+                        _ if param.contains("102") => {
+                            self.buffer.current_bg_color = to_bright(Color32::GREEN);
+                        }
+                        _ if param.contains("103") => {
+                            self.buffer.current_bg_color = to_bright(Color32::YELLOW);
+                        }
+                        _ if param.contains("104") => {
+                            self.buffer.current_bg_color = to_bright(Color32::BLUE);
+                        }
+                        _ if param.contains("105") => {
+                            self.buffer.current_bg_color = to_bright(Color32::MAGENTA);
+                        }
+                        _ if param.contains("106") => {
+                            self.buffer.current_bg_color = to_bright(Color32::CYAN);
+                        }
+                        _ if param.contains("107") => {
+                            self.buffer.current_bg_color = to_bright(Color32::WHITE);
+                        }
+
                         _ => {
                             warn!("Unsupported SGR parameter: {param}");
                         }

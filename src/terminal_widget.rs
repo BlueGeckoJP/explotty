@@ -421,7 +421,7 @@ impl TerminalWidget {
 
             // Select Graphic Rendition (SGR)
             ch if ch.ends_with('m') => {
-                let original_sequence = sequence.clone();
+                let original_sequence = sequence;
                 let mut sequence = sequence.trim_end_matches('m').to_string();
 
                 // Process 38 and 48 for foreground and background colors first

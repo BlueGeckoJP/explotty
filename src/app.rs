@@ -1,9 +1,16 @@
-use std::{sync::Arc, thread, time::Duration};
+use std::{
+    sync::{Arc, OnceLock},
+    thread,
+    time::Duration,
+};
 
 use eframe::egui::{self, mutex::Mutex};
 use portable_pty::{Child, CommandBuilder, PtyPair, PtySize, native_pty_system};
 
 use crate::terminal_widget::TerminalWidget;
+
+pub static INPUT_BUFFER: OnceLock<Arc<Mutex<Vec<u8>>>> = OnceLock::new();
+pub static OUTPUT_BUFFER: OnceLock<Arc<Mutex<Vec<u8>>>> = OnceLock::new();
 
 pub struct App {
     pub terminal_widget: TerminalWidget,
@@ -21,8 +28,12 @@ impl Default for App {
             pty_pair: None,
             child: None,
             is_running: false,
-            output_buffer: Arc::new(Mutex::new(Vec::new())),
-            input_buffer: Arc::new(Mutex::new(Vec::new())),
+            output_buffer: OUTPUT_BUFFER
+                .get_or_init(|| Arc::new(Mutex::new(Vec::new())))
+                .clone(),
+            input_buffer: INPUT_BUFFER
+                .get_or_init(|| Arc::new(Mutex::new(Vec::new())))
+                .clone(),
         }
     }
 }

@@ -311,8 +311,17 @@ impl TerminalWidget {
                 let x = self.buffer.cursor_x + 1; // Convert to 1-based index
                 let y = self.buffer.cursor_y + 1; // Convert to 1-based index
                 let response = format!("\x1b[{y};{x}R");
-                todo!("Send response back to PTY: {response}");
-                // TODO: HERE
+
+                {
+                    // Send the response back to the terminal
+                    let output_buffer = crate::app::OUTPUT_BUFFER.get();
+                    if let Some(output_buffer) = output_buffer {
+                        let mut output = output_buffer.lock();
+                        output.extend_from_slice(response.as_bytes());
+                    } else {
+                        warn!("Output buffer not initialized");
+                    }
+                }
             }
 
             // Erase in Display/Line - Erase in Display

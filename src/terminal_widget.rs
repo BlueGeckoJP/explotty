@@ -8,6 +8,7 @@ pub struct TerminalWidget {
     pub char_width: f32,
     pub line_height: f32,
     pub show_cursor: bool,
+    pty_buffer: Vec<u8>,
 }
 
 impl TerminalWidget {
@@ -19,6 +20,7 @@ impl TerminalWidget {
             char_width: font_size * 0.6,
             line_height: font_size * 1.2,
             show_cursor: true,
+            pty_buffer: Vec::new(),
         }
     }
 
@@ -181,53 +183,102 @@ impl TerminalWidget {
     }
 
     pub fn process_output(&mut self, data: &[u8]) {
-        let text = String::from_utf8_lossy(data);
+        self.pty_buffer.extend_from_slice(data);
 
-        let mut chars = text.chars().peekable();
-        while let Some(ch) = chars.next() {
-            match ch {
-                '\r' => self.buffer.carriage_return(),
-                '\n' => self.buffer.new_line(),
-                '\t' => {
+        let mut cursor = 0;
+        while cursor < self.pty_buffer.len() {
+            let start_cursor = cursor;
+            let remaining_bytes = &self.pty_buffer[cursor..].to_vec();
+
+            match remaining_bytes[0] {
+                b'\r' => {
+                    self.buffer.carriage_return();
+                    cursor += 1;
+                }
+                b'\n' => {
+                    self.buffer.new_line();
+                    cursor += 1;
+                }
+                b'\t' => {
                     for _ in 0..4 {
                         self.buffer.put_char(' ');
                     }
+                    cursor += 1;
                 }
-                '\x08' => self.buffer.backspace(), // Handle backspace
-                '\x1b' => {
-                    // Handle escape sequences
-                    if let Some('[') = chars.peek() {
-                        chars.next(); // Skip '['
-                        self.process_csi_sequence(&mut chars);
+                b'\x08' => {
+                    self.buffer.backspace();
+                    cursor += 1;
+                }
+                b'\x1b' => {
+                    if remaining_bytes.len() < 2 {
+                        break;
+                    }
+
+                    if remaining_bytes[1] == b'[' {
+                        let mut end_of_seq = 0;
+                        for (i, &byte) in remaining_bytes.iter().enumerate().skip(2) {
+                            if byte.is_ascii_lowercase() || byte.is_ascii_uppercase() {
+                                end_of_seq = i;
+                                break;
+                            }
+                        }
+
+                        if end_of_seq == 0 {
+                            break;
+                        }
+
+                        let sequence_body = &remaining_bytes[2..=end_of_seq];
+                        if let Ok(s) = std::str::from_utf8(sequence_body) {
+                            self.process_csi_sequence(s);
+                        }
+                        cursor += end_of_seq + 1;
+                    } else {
+                        cursor += 2;
                     }
                 }
-                ch if ch.is_control() => {}
-                ch => self.buffer.put_char(ch),
+                ch if ch < 32 || ch == 127 => {
+                    cursor += 1;
+                }
+                _ => match std::str::from_utf8(remaining_bytes) {
+                    Ok(s) => {
+                        if let Some(ch) = s.chars().next() {
+                            self.buffer.put_char(ch);
+                            cursor += ch.len_utf8();
+                        }
+                    }
+                    Err(e) => {
+                        let valid_len = e.valid_up_to();
+                        if valid_len > 0 {
+                            let valid_str = unsafe {
+                                std::str::from_utf8_unchecked(&remaining_bytes[..valid_len])
+                            };
+                            for ch in valid_str.chars() {
+                                self.buffer.put_char(ch);
+                            }
+                            cursor += valid_len;
+                        } else {
+                            break;
+                        }
+                    }
+                },
             }
+
+            if cursor == start_cursor {
+                warn!("Terminal parser did not advance. Forcing advance to prevent freeze.");
+                cursor += 1;
+            }
+        }
+
+        if cursor > 0 {
+            self.pty_buffer.drain(..cursor);
         }
     }
 
-    fn process_csi_sequence(&mut self, chars: &mut std::iter::Peekable<std::str::Chars>) {
-        let mut sequence = String::new();
-
-        // Collect CSI sequences
-        while let Some(&ch) = chars.peek() {
-            if ch.is_ascii_alphabetic() {
-                sequence.push(ch);
-                chars.next();
-                break;
-            } else if ch.is_ascii_digit() || ch == ';' || ch == '?' {
-                sequence.push(ch);
-                chars.next();
-            } else {
-                break;
-            }
-        }
-
+    fn process_csi_sequence(&mut self, sequence: &str) {
         debug!("Processing CSI sequence: {sequence}");
 
         // Process the CSI sequence
-        match sequence.as_str() {
+        match sequence {
             // Cursor Control - Cursor Movement
             ch if ch.ends_with('A') => {
                 // Cursor Up

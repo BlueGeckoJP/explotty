@@ -425,10 +425,7 @@ impl TerminalWidget {
                     }
                     1 => {
                         // Erase from start of line to cursor
-                        self.buffer.clear_range(
-                            Some((0, cy)),
-                            Some((cx, cy)),
-                        );
+                        self.buffer.clear_range(Some((0, cy)), Some((cx, cy)));
                     }
                     2 => {
                         // Erase entire line
@@ -731,6 +728,13 @@ impl TerminalWidget {
 
             // Set Mode/Reset Mode
             // Not implemented yet
+
+            // CSI n d (Vertical Line Position Absolute - VPA)
+            ch if ch.ends_with('d') => {
+                let row = sequence.trim_end_matches('d').parse::<usize>().unwrap_or(1);
+                self.buffer
+                    .move_cursor(self.buffer.cursor_x, row.saturating_sub(1));
+            }
 
             // Other CSI sequences
             _ => {

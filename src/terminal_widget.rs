@@ -1,3 +1,5 @@
+use std::hint::select_unpredictable;
+
 use eframe::egui::{self, Color32, FontId, Pos2, Rect, TextFormat, text::LayoutJob};
 
 use crate::{terminal_buffer::TerminalBuffer, terminal_cell::TerminalCell};
@@ -9,6 +11,8 @@ pub struct TerminalWidget {
     pub line_height: f32,
     pub show_cursor: bool,
     pty_buffer: Vec<u8>,
+    selection_start: Option<(usize, usize)>,
+    selection_end: Option<(usize, usize)>,
 }
 
 impl TerminalWidget {
@@ -21,6 +25,8 @@ impl TerminalWidget {
             line_height: font_size * 1.2,
             show_cursor: true,
             pty_buffer: Vec::new(),
+            selection_start: None,
+            selection_end: None,
         }
     }
 
@@ -37,6 +43,35 @@ impl TerminalWidget {
         }
 
         let response = ui.allocate_response(available_size, egui::Sense::click_and_drag());
+
+        // Selection logic
+        let rect = response.rect;
+
+        if response.drag_started()
+            && let Some(pos) = response.hover_pos()
+        {
+            let col = ((pos.x - rect.left()) / self.char_width).floor() as usize;
+            let row = ((pos.y - rect.top()) / self.line_height).floor() as usize;
+            let clamped_col = col.min(self.buffer.width - 1);
+            let clamped_row = row.min(self.buffer.height - 1);
+            self.selection_start = Some((clamped_col, clamped_row));
+            self.selection_end = Some((clamped_col, clamped_row));
+        }
+
+        if response.dragged()
+            && let Some(pos) = response.hover_pos()
+        {
+            let col = ((pos.x - rect.left()) / self.char_width).floor() as usize;
+            let row = ((pos.y - rect.top()) / self.line_height).floor() as usize;
+            let clamped_col = col.min(self.buffer.width - 1);
+            let clamped_row = row.min(self.buffer.height - 1);
+            self.selection_end = Some((clamped_col, clamped_row));
+        }
+
+        if response.clicked() {
+            self.selection_start = None;
+            self.selection_end = None;
+        }
 
         // Draw background
         ui.painter().rect_filled(response.rect, 0.0, Color32::BLACK);
@@ -114,7 +149,10 @@ impl TerminalWidget {
         }
 
         // Draw cursor
-        self.draw_cursor(ui, &response.rect);
+        self.draw_cursor(ui, &rect);
+
+        // Draw selection
+        self.draw_selection(ui, &rect);
 
         response
     }
@@ -134,12 +172,57 @@ impl TerminalWidget {
         }
     }
 
+    fn draw_selection(&self, ui: &mut egui::Ui, rect: &Rect) {
+        if let (Some(start), Some(end)) = (self.selection_start, self.selection_end) {
+            let (start_row, end_row) = (start.1.min(end.1), start.1.max(end.1));
+            let (start_col, end_col) = (start.0.min(end.0), start.0.max(end.0));
+
+            for r in start_row..=end_row {
+                for c in start_col..=end_col {
+                    let pos = Pos2::new(
+                        rect.left() + c as f32 * self.char_width,
+                        rect.top() + r as f32 * self.line_height,
+                    );
+                    let selection_rect = egui::Rect::from_min_size(
+                        pos,
+                        egui::vec2(self.char_width, self.line_height),
+                    );
+                    ui.painter().rect_filled(
+                        selection_rect,
+                        0.0,
+                        Color32::from_rgba_premultiplied(100, 100, 100, 100),
+                    );
+                }
+            }
+        }
+    }
+
     pub fn handle_input(&mut self, ctx: &egui::Context) -> Vec<u8> {
         let mut output = Vec::new();
+        let mut text_to_copy = None;
 
         ctx.input(|i| {
             for event in &i.events {
                 match event {
+                    egui::Event::Copy => {
+                        if let Some((start, end)) = self.selection_start.zip(self.selection_end) {
+                            let mut selected_text = String::new();
+
+                            let (start_row, end_row) = (start.1.min(end.1), start.1.max(end.1));
+                            let (start_col, end_col) = (start.0.min(end.0), start.0.max(end.0));
+
+                            for r in start_row..=end_row {
+                                for c in start_col..=end_col {
+                                    selected_text.push(self.buffer.cells[r][c].character);
+                                }
+                                if r < end_row {
+                                    selected_text.push('\n');
+                                }
+                            }
+
+                            text_to_copy = Some(selected_text);
+                        }
+                    }
                     egui::Event::Key {
                         key, pressed: true, ..
                     } => match key {
@@ -178,6 +261,13 @@ impl TerminalWidget {
                 }
             }
         });
+
+        // Copy text to clipboard if available
+        if let Some(text) = text_to_copy {
+            ctx.copy_text(text);
+            self.selection_start = None;
+            self.selection_end = None;
+        }
 
         output
     }

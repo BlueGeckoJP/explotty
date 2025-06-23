@@ -270,7 +270,7 @@ impl TerminalWidget {
         output
     }
 
-    pub fn process_output(&mut self, data: &[u8]) {
+    pub fn process_output(&mut self, ctx: &egui::Context, data: &[u8]) {
         self.pty_buffer.extend_from_slice(data);
 
         let mut cursor = 0;
@@ -351,7 +351,7 @@ impl TerminalWidget {
 
                         let sequence_body = &remaining_bytes[2..end_of_seq];
                         if let Ok(s) = std::str::from_utf8(sequence_body) {
-                            self.process_osc_sequence(s);
+                            self.process_osc_sequence(ctx, s);
                         }
                         cursor += end_of_seq + terminator_len;
                     } else {
@@ -865,11 +865,19 @@ impl TerminalWidget {
         }
     }
 
-    fn process_osc_sequence(&mut self, sequence: &str) {
+    fn process_osc_sequence(&mut self, ctx: &egui::Context, sequence: &str) {
         debug!("Processing OSC sequence: {sequence}");
 
         // Process the OSC sequence
         match sequence {
+            s if s.starts_with("0;") => {
+                // Set title (OSC 0)
+                let title = s.trim_start_matches("0;").trim_end_matches('\x07');
+                if !title.is_empty() {
+                    // Send the title to the terminal
+                    ctx.send_viewport_cmd(egui::ViewportCommand::Title(title.to_string()));
+                }
+            }
             _ => {
                 warn!("Unhandled OSC sequence: {sequence}");
             }

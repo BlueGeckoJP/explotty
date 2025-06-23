@@ -128,7 +128,7 @@ impl App {
         }
     }
 
-    fn handle_pty_output(&mut self) {
+    fn handle_pty_output(&mut self, ctx: &egui::Context) {
         let data = {
             let mut output = self.output_buffer.lock();
             if output.is_empty() {
@@ -139,7 +139,7 @@ impl App {
             data
         };
 
-        self.terminal_widget.process_output(&data);
+        self.terminal_widget.process_output(ctx, &data);
     }
 
     fn send_input_to_pty(&mut self, data: Vec<u8>) {
@@ -167,7 +167,7 @@ impl App {
 impl eframe::App for App {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         // Start the PTY processing
-        self.handle_pty_output();
+        self.handle_pty_output(ctx);
 
         // Repainting requests for continuous updating | ~60fps
         ctx.request_repaint_after(Duration::from_millis(16));

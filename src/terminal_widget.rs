@@ -378,13 +378,31 @@ impl TerminalWidget {
             // Erase in Display/Line - Erase in Display
             ch if ch.ends_with('J') => {
                 let num = sequence.trim_end_matches('J').parse::<usize>().unwrap_or(0);
+                let (cx, cy) = (self.buffer.cursor_x, self.buffer.cursor_y);
                 match num {
-                    0 => self
-                        .buffer
-                        .clear_range(Some((self.buffer.cursor_x, self.buffer.cursor_y)), None),
-                    1 => self
-                        .buffer
-                        .clear_range(None, Some((self.buffer.cursor_x, self.buffer.cursor_y))),
+                    0 => {
+                        // Erase from cursor to end of screen
+                        // Erase from cursor to end of line
+                        self.buffer.clear_range(
+                            Some((cx, cy)),
+                            Some((self.buffer.width.saturating_sub(1), cy)),
+                        );
+                        // Erase all lines below
+                        if cy + 1 < self.buffer.height {
+                            self.buffer.clear_range(Some((0, cy + 1)), None);
+                        }
+                    }
+                    1 => {
+                        // Erase from beginning of screen to cursor
+                        // Erase all lines above
+                        if cy > 0 {
+                            self.buffer.clear_range(
+                                None,
+                                Some((self.buffer.width.saturating_sub(1), cy - 1)),
+                            );
+                        }
+                        self.buffer.clear_range(Some((0, cy)), Some((cx, cy)));
+                    }
                     2 => self.buffer.clear_screen(),
                     3 => self.buffer.clear_screen(), // Clear entire screen (including scrollback) (Not implemented yet, and same behaviour as 2)
                     _ => {
@@ -396,24 +414,28 @@ impl TerminalWidget {
             // Erase in Display/Line - Erase in Line
             ch if ch.ends_with('K') => {
                 let num = sequence.trim_end_matches('K').parse::<usize>().unwrap_or(0);
+                let (cx, cy) = (self.buffer.cursor_x, self.buffer.cursor_y);
                 match num {
                     0 => {
                         // Erase from cursor to end of line
-                        for x in self.buffer.cursor_x..self.buffer.width {
-                            self.buffer.cells[self.buffer.cursor_y][x] = Default::default();
-                        }
+                        self.buffer.clear_range(
+                            Some((cx, cy)),
+                            Some((self.buffer.width.saturating_sub(1), cy)),
+                        );
                     }
                     1 => {
                         // Erase from start of line to cursor
-                        for x in 0..=self.buffer.cursor_x {
-                            self.buffer.cells[self.buffer.cursor_y][x] = Default::default();
-                        }
+                        self.buffer.clear_range(
+                            Some((0, cy)),
+                            Some((cx, cy)),
+                        );
                     }
                     2 => {
                         // Erase entire line
-                        for x in 0..self.buffer.width {
-                            self.buffer.cells[self.buffer.cursor_y][x] = Default::default();
-                        }
+                        self.buffer.clear_range(
+                            Some((0, cy)),
+                            Some((self.buffer.width.saturating_sub(1), cy)),
+                        );
                     }
                     _ => {}
                 }

@@ -1,5 +1,3 @@
-use std::hint::select_unpredictable;
-
 use eframe::egui::{self, Color32, FontId, Pos2, Rect, TextFormat, text::LayoutJob};
 
 use crate::{terminal_buffer::TerminalBuffer, terminal_cell::TerminalCell};
@@ -322,6 +320,40 @@ impl TerminalWidget {
                             self.process_csi_sequence(s);
                         }
                         cursor += end_of_seq + 1;
+                    } else if remaining_bytes[1] == b']' {
+                        let mut end_of_seq = 0;
+                        let mut terminator_len = 0;
+
+                        // Find the end of the OSC sequence
+                        let mut i = 2;
+                        while i < remaining_bytes.len() {
+                            // BEL
+                            if remaining_bytes[i] == b'\x07' {
+                                end_of_seq = i;
+                                terminator_len = 1;
+                                break;
+                            }
+                            // ESC \
+                            if remaining_bytes[i] == b'\x1b'
+                                && i + 1 < remaining_bytes.len()
+                                && remaining_bytes[i + 1] == b'\\'
+                            {
+                                end_of_seq = i;
+                                terminator_len = 2;
+                                break;
+                            }
+                            i += 1;
+                        }
+
+                        if end_of_seq == 0 {
+                            break;
+                        }
+
+                        let sequence_body = &remaining_bytes[2..end_of_seq];
+                        if let Ok(s) = std::str::from_utf8(sequence_body) {
+                            self.process_osc_sequence(s);
+                        }
+                        cursor += end_of_seq + terminator_len;
                     } else {
                         cursor += 2;
                     }
@@ -829,6 +861,17 @@ impl TerminalWidget {
             // Other CSI sequences
             _ => {
                 warn!("Unhandled CSI sequence: {sequence}");
+            }
+        }
+    }
+
+    fn process_osc_sequence(&mut self, sequence: &str) {
+        debug!("Processing OSC sequence: {sequence}");
+
+        // Process the OSC sequence
+        match sequence {
+            _ => {
+                warn!("Unhandled OSC sequence: {sequence}");
             }
         }
     }

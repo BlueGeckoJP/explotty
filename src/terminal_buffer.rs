@@ -135,16 +135,20 @@ impl TerminalBuffer {
     ) {
         let start_x = start_pos.map_or(0, |(x, _)| x);
         let start_y = start_pos.map_or(0, |(_, y)| y);
-        let end_x = end_pos.map_or(self.width - 1, |(x, _)| x);
-        let end_y = end_pos.map_or(self.height - 1, |(_, y)| y);
+        let end_x = end_pos.map_or(self.width.saturating_sub(1), |(x, _)| x);
+        let end_y = end_pos.map_or(self.height.saturating_sub(1), |(_, y)| y);
 
-        for y in start_y..=end_y {
-            if y < self.height {
-                for x in start_x..=end_x {
-                    if x < self.width {
-                        self.cells[y][x] = TerminalCell::default();
-                    }
-                }
+        // y range within the height of the buffer
+        let y_start = start_y.min(self.height);
+        let y_end = end_y.min(self.height.saturating_sub(1));
+
+        for y in y_start..=y_end {
+            // x range within the width of the buffer
+            let x_start = start_x.min(self.width);
+            let x_end = end_x.min(self.width.saturating_sub(1));
+
+            if x_start <= x_end {
+                self.cells[y][x_start..=x_end].fill(TerminalCell::default());
             }
         }
     }

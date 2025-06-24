@@ -11,6 +11,7 @@ pub struct TerminalWidget {
     pty_buffer: Vec<u8>,
     selection_start: Option<(usize, usize)>,
     selection_end: Option<(usize, usize)>,
+    bracket_paste_mode: bool,
 }
 
 impl TerminalWidget {
@@ -25,6 +26,7 @@ impl TerminalWidget {
             pty_buffer: Vec::new(),
             selection_start: None,
             selection_end: None,
+            bracket_paste_mode: false,
         }
     }
 
@@ -222,7 +224,12 @@ impl TerminalWidget {
                         }
                     }
                     egui::Event::Paste(paste) => {
-                        output.extend_from_slice(paste.as_bytes());
+                        let mut paste_text = paste.clone();
+                        if self.bracket_paste_mode {
+                            paste_text = format!("\x1b[200~{paste_text}\x1b[201~");
+                        }
+
+                        output.extend_from_slice(paste_text.as_bytes());
                     }
                     egui::Event::Key {
                         key, pressed: true, ..
@@ -859,6 +866,15 @@ impl TerminalWidget {
                 let row = sequence.trim_end_matches('d').parse::<usize>().unwrap_or(1);
                 self.buffer
                     .move_cursor(self.buffer.cursor_x, row.saturating_sub(1));
+            }
+
+            // CSI ? 2004 h (Enable Bracketed Paste Mode)
+            ch if ch.ends_with('h') && sequence.contains("2004") => {
+                self.bracket_paste_mode = true;
+            }
+            // CSI ? 2004 l (Disable Bracketed Paste Mode)
+            ch if ch.ends_with('l') && sequence.contains("2004") => {
+                self.bracket_paste_mode = false;
             }
 
             // Other CSI sequences

@@ -221,6 +221,9 @@ impl TerminalWidget {
                             text_to_copy = Some(selected_text);
                         }
                     }
+                    egui::Event::Paste(paste) => {
+                        output.extend_from_slice(paste.as_bytes());
+                    }
                     egui::Event::Key {
                         key, pressed: true, ..
                     } => match key {

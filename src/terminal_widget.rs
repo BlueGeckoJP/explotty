@@ -14,6 +14,7 @@ pub struct TerminalWidget {
     bracket_paste_mode: bool,
     // Storage location for current screen information used when Alternative Screen Buffer is used
     saved_screen_buffer: Option<TerminalBuffer>,
+    decckm_mode: bool, // DECCKM - DEC Private Mode
 }
 
 impl TerminalWidget {
@@ -30,6 +31,7 @@ impl TerminalWidget {
             selection_end: None,
             bracket_paste_mode: false,
             saved_screen_buffer: None,
+            decckm_mode: false,
         }
     }
 
@@ -236,38 +238,115 @@ impl TerminalWidget {
                     }
                     egui::Event::Key {
                         key, pressed: true, ..
-                    } => match key {
-                        egui::Key::Enter => {
-                            output.extend_from_slice(b"\r");
+                    } => {
+                        match key {
+                            // Arrow keys
+                            egui::Key::ArrowUp => {
+                                output.extend_from_slice(if self.decckm_mode {
+                                    b"\x1bOA"
+                                } else {
+                                    b"\x1b[A"
+                                });
+                            }
+                            egui::Key::ArrowDown => {
+                                output.extend_from_slice(if self.decckm_mode {
+                                    b"\x1bOB"
+                                } else {
+                                    b"\x1b[B"
+                                });
+                            }
+                            egui::Key::ArrowLeft => {
+                                output.extend_from_slice(if self.decckm_mode {
+                                    b"\x1bOD"
+                                } else {
+                                    b"\x1b[D"
+                                });
+                            }
+                            egui::Key::ArrowRight => {
+                                output.extend_from_slice(if self.decckm_mode {
+                                    b"\x1bOC"
+                                } else {
+                                    b"\x1b[C"
+                                });
+                            }
+
+                            // Numpad keys (only special in DECCKM application mode)
+                            egui::Key::Num0 if self.decckm_mode => {
+                                output.extend_from_slice(b"\x1bOp")
+                            }
+                            egui::Key::Num1 if self.decckm_mode => {
+                                output.extend_from_slice(b"\x1bOq")
+                            }
+                            egui::Key::Num2 if self.decckm_mode => {
+                                output.extend_from_slice(b"\x1bOr")
+                            }
+                            egui::Key::Num3 if self.decckm_mode => {
+                                output.extend_from_slice(b"\x1bOs")
+                            }
+                            egui::Key::Num4 if self.decckm_mode => {
+                                output.extend_from_slice(b"\x1bOt")
+                            }
+                            egui::Key::Num5 if self.decckm_mode => {
+                                output.extend_from_slice(b"\x1bOu")
+                            }
+                            egui::Key::Num6 if self.decckm_mode => {
+                                output.extend_from_slice(b"\x1bOv")
+                            }
+                            egui::Key::Num7 if self.decckm_mode => {
+                                output.extend_from_slice(b"\x1bOw")
+                            }
+                            egui::Key::Num8 if self.decckm_mode => {
+                                output.extend_from_slice(b"\x1bOx")
+                            }
+                            egui::Key::Num9 if self.decckm_mode => {
+                                output.extend_from_slice(b"\x1bOy")
+                            }
+                            egui::Key::Plus if self.decckm_mode => {
+                                output.extend_from_slice(b"\x1bOl")
+                            }
+                            egui::Key::Minus if self.decckm_mode => {
+                                output.extend_from_slice(b"\x1bOm")
+                            }
+                            // Why no asterisks? Huh? Process in text input instead
+                            /*egui::Key::Asterisk if self.decckm_mode => {
+                                output.extend_from_slice(b"\x1bOj")
+                            }*/
+                            egui::Key::Slash if self.decckm_mode => {
+                                output.extend_from_slice(b"\x1bOo")
+                            }
+                            egui::Key::Period if self.decckm_mode => {
+                                output.extend_from_slice(b"\x1bOn")
+                            }
+
+                            // Enter keys
+                            egui::Key::Enter => {
+                                if self.decckm_mode {
+                                    output.extend_from_slice(b"\x1bOM");
+                                } else {
+                                    output.extend_from_slice(b"\r");
+                                }
+                            }
+
+                            // Other keys
+                            egui::Key::Backspace => {
+                                output.extend_from_slice(b"\x08");
+                            }
+                            egui::Key::Tab => {
+                                output.extend_from_slice(b"\t");
+                            }
+                            egui::Key::Escape => {
+                                output.extend_from_slice(b"\x1b");
+                            }
+                            _ => {}
                         }
-                        egui::Key::Backspace => {
-                            output.extend_from_slice(b"\x08");
-                        }
-                        egui::Key::Tab => {
-                            output.extend_from_slice(b"\t");
-                        }
-                        egui::Key::ArrowUp => {
-                            output.extend_from_slice(b"\x1b[A");
-                        }
-                        egui::Key::ArrowDown => {
-                            output.extend_from_slice(b"\x1b[B");
-                        }
-                        egui::Key::ArrowLeft => {
-                            output.extend_from_slice(b"\x1b[D");
-                        }
-                        egui::Key::ArrowRight => {
-                            output.extend_from_slice(b"\x1b[C");
-                        }
-                        egui::Key::Escape => {
-                            output.extend_from_slice(b"\x1b");
-                        }
-                        _ => {}
-                    },
+                    }
                     egui::Event::Text(text) => {
-                        output.extend_from_slice(text.as_bytes());
                         for ch in text.chars() {
-                            if ch.is_control() {
-                                continue;
+                            if ch == '*' && self.decckm_mode {
+                                output.extend_from_slice(b"\x1bOj");
+                            } else {
+                                let mut buf = [0; 4];
+                                output.extend_from_slice(ch.encode_utf8(&mut buf).as_bytes());
                             }
                         }
                     }
@@ -911,6 +990,15 @@ impl TerminalWidget {
             // CSI ? 25 l (Hide Cursor)
             ch if ch.ends_with('l') && sequence.contains("25") => {
                 self.show_cursor = false;
+            }
+
+            // CSI ? 1 h (DECCKM)
+            ch if ch.ends_with('h') && sequence.contains("1") => {
+                self.decckm_mode = true;
+            }
+            // CSI ? 1 l (Reset DECCKM)
+            ch if ch.ends_with('l') && sequence.contains("1") => {
+                self.decckm_mode = false;
             }
 
             // Other CSI sequences

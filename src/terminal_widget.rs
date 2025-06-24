@@ -903,6 +903,16 @@ impl TerminalWidget {
                 self.saved_screen_buffer = None;
             }
 
+            // CSI ? 25 h (Show Cursor)
+            ch if ch.ends_with('h') && sequence.contains("25") => {
+                self.show_cursor = true;
+            }
+
+            // CSI ? 25 l (Hide Cursor)
+            ch if ch.ends_with('l') && sequence.contains("25") => {
+                self.show_cursor = false;
+            }
+
             // Other CSI sequences
             _ => {
                 warn!("Unhandled CSI sequence: {sequence}");

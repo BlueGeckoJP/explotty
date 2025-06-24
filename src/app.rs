@@ -186,15 +186,13 @@ impl eframe::App for App {
                 }
             }
 
+            // Always focus terminal widget
+            ui.memory_mut(|mem| mem.request_focus(response.id));
+
             // If it has focus, handle input
             if response.has_focus() || ui.memory(|mem| mem.has_focus(response.id)) {
                 let input_data = self.terminal_widget.handle_input(ctx);
                 self.send_input_to_pty(input_data);
-            }
-
-            // Click to start the PTY
-            if response.clicked() {
-                ui.memory_mut(|mem| mem.request_focus(response.id));
             }
         });
     }

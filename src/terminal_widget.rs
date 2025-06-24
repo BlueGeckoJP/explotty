@@ -255,6 +255,9 @@ impl TerminalWidget {
                         egui::Key::ArrowRight => {
                             output.extend_from_slice(b"\x1b[C");
                         }
+                        egui::Key::Escape => {
+                            output.extend_from_slice(b"\x1b");
+                        }
                         _ => {}
                     },
                     egui::Event::Text(text) => {

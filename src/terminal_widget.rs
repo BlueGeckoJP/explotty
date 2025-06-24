@@ -12,6 +12,8 @@ pub struct TerminalWidget {
     selection_start: Option<(usize, usize)>,
     selection_end: Option<(usize, usize)>,
     bracket_paste_mode: bool,
+    // Storage location for current screen information used when Alternative Screen Buffer is used
+    saved_screen_buffer: Option<TerminalBuffer>,
 }
 
 impl TerminalWidget {
@@ -27,6 +29,7 @@ impl TerminalWidget {
             selection_start: None,
             selection_end: None,
             bracket_paste_mode: false,
+            saved_screen_buffer: None,
         }
     }
 
@@ -878,6 +881,26 @@ impl TerminalWidget {
             // CSI ? 2004 l (Disable Bracketed Paste Mode)
             ch if ch.ends_with('l') && sequence.contains("2004") => {
                 self.bracket_paste_mode = false;
+            }
+
+            // CSI ? 1049 h (Enable Alternate Screen Buffer)
+            ch if ch.ends_with('h') && sequence.contains("1049") => {
+                // Switch to alternate screen buffer
+                let new_buffer = TerminalBuffer::new(self.buffer.width, self.buffer.height);
+                self.saved_screen_buffer = Some(std::mem::replace(&mut self.buffer, new_buffer));
+                self.buffer.cursor_x = 0;
+                self.buffer.cursor_y = 0;
+            }
+
+            // CSI ? 1049 l (Disable Alternate Screen Buffer)
+            ch if ch.ends_with('l') && sequence.contains("1049") => {
+                // Switch back to main screen buffer
+                if let Some(saved_buffer) = self.saved_screen_buffer.take() {
+                    self.buffer = saved_buffer;
+                } else {
+                    warn!("No saved screen buffer to switch back to");
+                }
+                self.saved_screen_buffer = None;
             }
 
             // Other CSI sequences

@@ -19,6 +19,7 @@ pub struct App {
     output_buffer: Arc<Mutex<Vec<u8>>>,
     input_buffer: Arc<Mutex<Vec<u8>>>,
     is_running: bool,
+    last_size: (u16, u16),
 }
 
 impl Default for App {
@@ -34,6 +35,7 @@ impl Default for App {
             input_buffer: INPUT_BUFFER
                 .get_or_init(|| Arc::new(Mutex::new(Vec::new())))
                 .clone(),
+            last_size: (0, 0),
         }
     }
 }
@@ -178,12 +180,9 @@ impl eframe::App for App {
             let cols = self.terminal_widget.buffer.width as u16;
             let rows = self.terminal_widget.buffer.height as u16;
 
-            static mut LAST_SIZE: (u16, u16) = (0, 0);
-            unsafe {
-                if LAST_SIZE != (cols, rows) {
-                    self.resize_pty(cols, rows);
-                    LAST_SIZE = (cols, rows);
-                }
+            if self.last_size != (cols, rows) {
+                self.resize_pty(cols, rows);
+                self.last_size = (cols, rows);
             }
 
             // Always focus terminal widget

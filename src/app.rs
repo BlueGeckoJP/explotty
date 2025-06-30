@@ -7,13 +7,14 @@ use std::{
 use eframe::egui::{self, mutex::Mutex};
 use portable_pty::{Child, CommandBuilder, PtyPair, PtySize, native_pty_system};
 
-use crate::terminal_widget::TerminalWidget;
+use crate::{explorer_widget::ExplorerWidget, terminal_widget::TerminalWidget};
 
 pub static INPUT_BUFFER: OnceLock<Arc<Mutex<Vec<u8>>>> = OnceLock::new();
 pub static OUTPUT_BUFFER: OnceLock<Arc<Mutex<Vec<u8>>>> = OnceLock::new();
 
 pub struct App {
     pub terminal_widget: TerminalWidget,
+    explorer_widget: ExplorerWidget,
     pub pty_pair: Option<PtyPair>,
     pub child: Option<Box<dyn Child + Send + Sync>>,
     output_buffer: Arc<Mutex<Vec<u8>>>,
@@ -27,6 +28,7 @@ impl Default for App {
     fn default() -> Self {
         Self {
             terminal_widget: TerminalWidget::new(80, 24),
+            explorer_widget: ExplorerWidget::new(),
             pty_pair: None,
             child: None,
             is_running: false,
@@ -181,11 +183,7 @@ impl eframe::App for App {
         ctx.request_repaint_after(Duration::from_millis(16));
 
         egui::TopBottomPanel::bottom("explorer").show(ctx, |ui| {
-            ui.label(format!(
-                "Current Directory: {}",
-                crate::utils::get_current_dir_from_pty(self.pid.unwrap_or(0))
-                    .unwrap_or_else(|| "N/A".to_string())
-            ));
+            self.explorer_widget.show(ui, self.pid);
         });
 
         egui::CentralPanel::default().show(ctx, |ui| {

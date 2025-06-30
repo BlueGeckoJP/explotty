@@ -23,7 +23,7 @@ pub fn get_current_dir_from_pty(pid: u32) -> Option<String> {
 
 pub fn load_system_font(ctx: &Context) -> anyhow::Result<()> {
     let handle =
-        SystemSource::new().select_best_match(&[FamilyName::SansSerif], &Properties::new())?;
+        SystemSource::new().select_best_match(&[FamilyName::Monospace], &Properties::new())?;
 
     let buf: Vec<u8> = match handle {
         Handle::Memory { bytes, .. } => bytes.to_vec(),

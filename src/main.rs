@@ -1,4 +1,5 @@
 mod app;
+mod explorer_widget;
 mod terminal_buffer;
 mod terminal_cell;
 mod terminal_widget;

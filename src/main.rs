@@ -2,6 +2,7 @@ mod app;
 mod terminal_buffer;
 mod terminal_cell;
 mod terminal_widget;
+mod utils;
 
 #[macro_use]
 extern crate log;

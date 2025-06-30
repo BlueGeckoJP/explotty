@@ -20,6 +20,7 @@ pub struct App {
     input_buffer: Arc<Mutex<Vec<u8>>>,
     is_running: bool,
     last_size: (u16, u16),
+    pid: Option<u32>,
 }
 
 impl Default for App {
@@ -36,6 +37,7 @@ impl Default for App {
                 .get_or_init(|| Arc::new(Mutex::new(Vec::new())))
                 .clone(),
             last_size: (0, 0),
+            pid: None,
         }
     }
 }
@@ -64,6 +66,7 @@ impl App {
             .slave
             .spawn_command(cmd)
             .expect("Failed to spawn shell");
+        self.pid = child.process_id();
 
         self.pty_pair = Some(pty_pair);
         self.child = Some(child);

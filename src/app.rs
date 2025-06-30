@@ -177,6 +177,14 @@ impl eframe::App for App {
         // Repainting requests for continuous updating | ~60fps
         ctx.request_repaint_after(Duration::from_millis(16));
 
+        egui::TopBottomPanel::bottom("explorer").show(ctx, |ui| {
+            ui.label(format!(
+                "Current Directory: {}",
+                crate::utils::get_current_dir_from_pty(self.pid.unwrap_or(0))
+                    .unwrap_or_else(|| "N/A".to_string())
+            ));
+        });
+
         egui::CentralPanel::default().show(ctx, |ui| {
             let response = self.terminal_widget.show(ui);
 

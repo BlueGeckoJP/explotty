@@ -3,6 +3,7 @@ use eframe::egui;
 pub struct ExplorerWidget {
     files: Vec<FileItem>,
     selected_item_index: Option<usize>,
+    current_directory: Option<String>,
 }
 
 struct FileItem {
@@ -35,14 +36,18 @@ impl ExplorerWidget {
         Self {
             files,
             selected_item_index: None,
+            current_directory: None,
         }
     }
 
     pub fn show(&mut self, ui: &mut egui::Ui, pid: Option<u32>) {
+        self.current_directory = crate::utils::get_current_dir_from_pty(pid.unwrap_or(0));
+
         ui.label(format!(
             "Current Directory: {}",
-            crate::utils::get_current_dir_from_pty(pid.unwrap_or(0))
-                .unwrap_or_else(|| "N/A".to_string())
+            self.current_directory
+                .as_ref()
+                .unwrap_or(&"N/A".to_string())
         ));
         ui.separator();
 

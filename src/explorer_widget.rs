@@ -64,7 +64,11 @@ impl ExplorerWidget {
                         ui.end_row();
 
                         for file in &self.files {
-                            ui.label(&file.name);
+                            ui.label(if file.is_directory {
+                                format!("📁 {}", file.name)
+                            } else {
+                                format!("📄 {}", file.name)
+                            });
                             ui.label(&file.size);
                             ui.label(&file.file_type);
                             ui.label(&file.modified);

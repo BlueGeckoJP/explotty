@@ -25,12 +25,11 @@ impl ExplorerWidget {
             },
             FileItem {
                 name: "documents".to_string(),
-                size: "".to_string(),
+                size: "--".to_string(),
                 file_type: "Directory".to_string(),
                 modified: "2023-10-01 11:00".to_string(),
                 is_directory: true,
             },
-            // Add more sample files as needed
         ];
 
         Self {
@@ -47,26 +46,31 @@ impl ExplorerWidget {
         ));
         ui.separator();
 
-        egui::ScrollArea::vertical().show(ui, |ui| {
-            egui::Grid::new("explorer_grid")
-                .num_columns(4)
-                .spacing([10.0, 5.0])
-                .striped(true)
-                .show(ui, |ui| {
-                    ui.label("Name");
-                    ui.label("Size");
-                    ui.label("Type");
-                    ui.label("Modified");
-                    ui.end_row();
+        egui::ScrollArea::vertical()
+            .auto_shrink([false, false])
+            .show(ui, |ui| {
+                let available_width = ui.available_width();
 
-                    for (i, file) in self.files.iter().enumerate() {
-                        ui.label(&file.name);
-                        ui.label(&file.size);
-                        ui.label(&file.file_type);
-                        ui.label(&file.modified);
+                egui::Grid::new("explorer_grid")
+                    .num_columns(4)
+                    .spacing([10.0, 5.0])
+                    .striped(true)
+                    .min_col_width(available_width / 4.0)
+                    .show(ui, |ui| {
+                        ui.label("Name");
+                        ui.label("Size");
+                        ui.label("Type");
+                        ui.label("Modified");
                         ui.end_row();
-                    }
-                });
-        });
+
+                        for file in &self.files {
+                            ui.label(&file.name);
+                            ui.label(&file.size);
+                            ui.label(&file.file_type);
+                            ui.label(&file.modified);
+                            ui.end_row();
+                        }
+                    });
+            });
     }
 }

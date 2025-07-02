@@ -15,8 +15,26 @@ struct FileItem {
 
 impl ExplorerWidget {
     pub fn new() -> Self {
+        let files = vec![
+            FileItem {
+                name: "example.txt".to_string(),
+                size: "1.2 KB".to_string(),
+                file_type: "Text File".to_string(),
+                modified: "2023-10-01 12:00".to_string(),
+                is_directory: false,
+            },
+            FileItem {
+                name: "documents".to_string(),
+                size: "".to_string(),
+                file_type: "Directory".to_string(),
+                modified: "2023-10-01 11:00".to_string(),
+                is_directory: true,
+            },
+            // Add more sample files as needed
+        ];
+
         Self {
-            files: Vec::new(),
+            files,
             selected_item_index: None,
         }
     }
@@ -35,13 +53,14 @@ impl ExplorerWidget {
                 .spacing([10.0, 5.0])
                 .striped(true)
                 .show(ui, |ui| {
-                    ui.heading("Name");
-                    ui.heading("Size");
-                    ui.heading("Type");
-                    ui.heading("Modified");
+                    ui.label("Name");
+                    ui.label("Size");
+                    ui.label("Type");
+                    ui.label("Modified");
                     ui.end_row();
 
                     for (i, file) in self.files.iter().enumerate() {
+                        ui.label(&file.name);
                         ui.label(&file.size);
                         ui.label(&file.file_type);
                         ui.label(&file.modified);

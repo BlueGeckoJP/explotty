@@ -182,9 +182,11 @@ impl eframe::App for App {
         // Repainting requests for continuous updating | ~60fps
         ctx.request_repaint_after(Duration::from_millis(16));
 
-        egui::TopBottomPanel::bottom("explorer").show(ctx, |ui| {
-            self.explorer_widget.show(ui, self.pid);
-        });
+        egui::TopBottomPanel::bottom("explorer")
+            .resizable(true)
+            .show(ctx, |ui| {
+                self.explorer_widget.show(ui, self.pid);
+            });
 
         egui::CentralPanel::default().show(ctx, |ui| {
             let response = self.terminal_widget.show(ui);

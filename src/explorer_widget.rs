@@ -1,4 +1,5 @@
 use eframe::egui;
+use walkdir::WalkDir;
 
 pub struct ExplorerWidget {
     files: Vec<FileItem>,
@@ -41,7 +42,13 @@ impl ExplorerWidget {
     }
 
     pub fn show(&mut self, ui: &mut egui::Ui, pid: Option<u32>) {
-        self.current_directory = crate::utils::get_current_dir_from_pty(pid.unwrap_or(0));
+        let new_directory = crate::utils::get_current_dir_from_pty(pid.unwrap_or(0));
+        if new_directory != self.current_directory {
+            self.current_directory = new_directory;
+            if let Err(e) = self.refresh_files() {
+                ui.label(format!("Error refreshing files: {e}"));
+            }
+        }
 
         ui.label(format!(
             "Current Directory: {}",
@@ -81,5 +88,40 @@ impl ExplorerWidget {
                         }
                     });
             });
+    }
+
+    pub fn refresh_files(&mut self) -> anyhow::Result<()> {
+        self.files.clear();
+        for entry in WalkDir::new(self.current_directory.clone().unwrap_or_default())
+            .max_depth(1)
+            .into_iter()
+            .filter_map(Result::ok)
+        {
+            let metadata = entry.metadata()?;
+            let file_type = if metadata.is_dir() {
+                "Directory".to_string()
+            } else {
+                "File".to_string()
+            };
+            let size = if metadata.is_dir() {
+                "--".to_string()
+            } else {
+                format!("{} bytes", metadata.len())
+            };
+            let modified = metadata
+                .modified()?
+                .duration_since(std::time::UNIX_EPOCH)
+                .map(|d| format!("{d:?}"))
+                .unwrap_or_else(|_| "N/A".to_string());
+
+            self.files.push(FileItem {
+                name: entry.file_name().to_string_lossy().to_string(),
+                size,
+                file_type,
+                modified,
+                is_directory: metadata.is_dir(),
+            });
+        }
+        Ok(())
     }
 }

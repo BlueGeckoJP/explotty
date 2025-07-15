@@ -1,6 +1,8 @@
 use eframe::egui;
 use walkdir::WalkDir;
 
+use crate::utils::to_human_readable_size;
+
 pub struct ExplorerWidget {
     files: Vec<FileItem>,
     selected_item_index: Option<usize>,
@@ -17,25 +19,8 @@ struct FileItem {
 
 impl ExplorerWidget {
     pub fn new() -> Self {
-        let files = vec![
-            FileItem {
-                name: "example.txt".to_string(),
-                size: "1.2 KB".to_string(),
-                file_type: "Text File".to_string(),
-                modified: "2023-10-01 12:00".to_string(),
-                is_directory: false,
-            },
-            FileItem {
-                name: "documents".to_string(),
-                size: "--".to_string(),
-                file_type: "Directory".to_string(),
-                modified: "2023-10-01 11:00".to_string(),
-                is_directory: true,
-            },
-        ];
-
         Self {
-            files,
+            files: Vec::new(),
             selected_item_index: None,
             current_directory: None,
         }
@@ -106,7 +91,7 @@ impl ExplorerWidget {
             let size = if metadata.is_dir() {
                 "--".to_string()
             } else {
-                format!("{} bytes", metadata.len())
+                to_human_readable_size(metadata.len())
             };
             let modified = metadata
                 .modified()?

@@ -1,3 +1,5 @@
+use std::path::Path;
+
 use chrono::{DateTime, Local};
 use eframe::egui;
 use egui_extras::{Size, StripBuilder};
@@ -151,7 +153,21 @@ impl ExplorerWidget {
         self.files.clear();
         self.selected_index = None;
 
+        if let Some(current_dir) = &self.current_directory {
+            let path = Path::new(current_dir);
+            if path.parent().is_some() {
+                self.files.push(FileItem {
+                    name: "..".to_string(),
+                    size: "--".to_string(),
+                    file_type: "Directory".to_string(),
+                    modified: "--".to_string(),
+                    is_directory: true,
+                });
+            }
+        }
+
         for entry in WalkDir::new(self.current_directory.clone().unwrap_or_default())
+            .min_depth(1)
             .max_depth(1)
             .into_iter()
             .filter_map(Result::ok)
@@ -178,6 +194,7 @@ impl ExplorerWidget {
                 is_directory: metadata.is_dir(),
             });
         }
+
         Ok(())
     }
 }

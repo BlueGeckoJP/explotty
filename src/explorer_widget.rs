@@ -103,16 +103,24 @@ impl ExplorerWidget {
                                     self.selected_index = Some(index);
                                 }
 
-                                if response.double_clicked()
-                                    && file.is_directory
-                                    && let Some(input) = crate::app::INPUT_BUFFER.get()
-                                {
-                                    let cd_command =
-                                        format!("cd {}", file.name.replace(" ", "\\ "));
-                                    let b = format!("\x15{cd_command}/\r");
+                                if response.double_clicked() {
+                                    if file.is_directory
+                                        && let Some(input) = crate::app::INPUT_BUFFER.get()
+                                    {
+                                        let cd_command =
+                                            format!("cd {}", file.name.replace(" ", "\\ "));
+                                        let b = format!("\x15{cd_command}/\r");
 
-                                    let mut input = input.lock();
-                                    input.extend_from_slice(b.as_bytes());
+                                        let mut input = input.lock();
+                                        input.extend_from_slice(b.as_bytes());
+                                    } else {
+                                        let current_dir =
+                                            self.current_directory.clone().unwrap_or_default();
+                                        let file_path = Path::new(&current_dir).join(&file.name);
+                                        if let Err(e) = open::that(file_path) {
+                                            log::error!("Failed to open file: {e}");
+                                        }
+                                    }
                                 }
 
                                 StripBuilder::new(ui)

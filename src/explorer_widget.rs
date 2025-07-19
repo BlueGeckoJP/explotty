@@ -1,4 +1,5 @@
 use eframe::egui;
+use egui_extras::{Size, StripBuilder};
 use walkdir::WalkDir;
 
 use crate::utils::to_human_readable_size;
@@ -46,35 +47,70 @@ impl ExplorerWidget {
         egui::ScrollArea::vertical()
             .auto_shrink([false, false])
             .show(ui, |ui| {
-                let available_width = ui.available_width();
+                StripBuilder::new(ui)
+                    .size(Size::exact(20.0))
+                    .sizes(Size::exact(20.0), self.files.len())
+                    .vertical(|mut strip| {
+                        strip.cell(|ui| {
+                            StripBuilder::new(ui)
+                                .size(Size::remainder().at_least(100.0))
+                                .size(Size::exact(80.0))
+                                .size(Size::exact(80.0))
+                                .size(Size::exact(120.0))
+                                .horizontal(|mut strip| {
+                                    strip.cell(|ui| {
+                                        ui.label("Name");
+                                    });
+                                    strip.cell(|ui| {
+                                        ui.label("Size");
+                                    });
+                                    strip.cell(|ui| {
+                                        ui.label("Type");
+                                    });
+                                    strip.cell(|ui| {
+                                        ui.label("Modified");
+                                    });
+                                });
+                        });
 
-                egui::Grid::new("explorer_grid")
-                    .num_columns(4)
-                    .spacing([10.0, 5.0])
-                    .striped(true)
-                    .min_col_width(available_width / 4.0)
-                    .show(ui, |ui| {
-                        ui.label("Name");
-                        ui.label("Size");
-                        ui.label("Type");
-                        ui.label("Modified");
-                        ui.end_row();
+                        for (index, file) in self.files.iter().enumerate() {
+                            strip.cell(|ui| {
+                                if index % 2 == 1 {
+                                    ui.painter().rect_filled(
+                                        ui.available_rect_before_wrap(),
+                                        0.0,
+                                        ui.style().visuals.faint_bg_color,
+                                    );
+                                }
 
-                        for file in &self.files {
-                            ui.label(if file.is_directory {
-                                format!("📁 {}", file.name)
-                            } else {
-                                format!("📄 {}", file.name)
-                            });
-                            ui.label(&file.size);
-                            ui.label(&file.file_type);
-                            ui.label(&file.modified);
-                            ui.end_row();
+                                StripBuilder::new(ui)
+                                    .size(Size::remainder().at_least(100.0))
+                                    .size(Size::exact(80.0))
+                                    .size(Size::exact(80.0))
+                                    .size(Size::exact(120.0))
+                                    .horizontal(|mut strip| {
+                                        strip.cell(|ui| {
+                                            ui.label(if file.is_directory {
+                                                format!("📁 {}", file.name)
+                                            } else {
+                                                format!("📄 {}", file.name)
+                                            });
+                                        });
+                                        strip.cell(|ui| {
+                                            ui.label(&file.size);
+                                        });
+                                        strip.cell(|ui| {
+                                            ui.label(&file.file_type);
+                                        });
+                                        strip.cell(|ui| {
+                                            ui.label(&file.modified);
+                                        });
+                                    });
+                            })
                         }
                     });
             });
     }
-
     pub fn refresh_files(&mut self) -> anyhow::Result<()> {
         self.files.clear();
         for entry in WalkDir::new(self.current_directory.clone().unwrap_or_default())

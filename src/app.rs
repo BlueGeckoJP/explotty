@@ -184,6 +184,7 @@ impl eframe::App for App {
 
         egui::TopBottomPanel::bottom("explorer")
             .resizable(true)
+            .default_height(200.0)
             .show(ctx, |ui| {
                 self.explorer_widget.show(ui, self.pid);
             });

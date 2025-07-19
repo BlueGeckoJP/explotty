@@ -58,16 +58,40 @@ impl ExplorerWidget {
                                 .size(Size::exact(120.0))
                                 .horizontal(|mut strip| {
                                     strip.cell(|ui| {
-                                        ui.label("Name");
+                                        ui.allocate_ui_with_layout(
+                                            ui.available_size(),
+                                            egui::Layout::left_to_right(egui::Align::Center),
+                                            |ui| {
+                                                ui.label("Name");
+                                            },
+                                        );
                                     });
                                     strip.cell(|ui| {
-                                        ui.label("Size");
+                                        ui.allocate_ui_with_layout(
+                                            ui.available_size(),
+                                            egui::Layout::left_to_right(egui::Align::Center),
+                                            |ui| {
+                                                ui.label("Size");
+                                            },
+                                        );
                                     });
                                     strip.cell(|ui| {
-                                        ui.label("Type");
+                                        ui.allocate_ui_with_layout(
+                                            ui.available_size(),
+                                            egui::Layout::left_to_right(egui::Align::Center),
+                                            |ui| {
+                                                ui.label("Type");
+                                            },
+                                        );
                                     });
                                     strip.cell(|ui| {
-                                        ui.label("Modified");
+                                        ui.allocate_ui_with_layout(
+                                            ui.available_size(),
+                                            egui::Layout::left_to_right(egui::Align::Center),
+                                            |ui| {
+                                                ui.label("Modified");
+                                            },
+                                        );
                                     });
                                 });
                         });
@@ -89,20 +113,44 @@ impl ExplorerWidget {
                                     .size(Size::exact(120.0))
                                     .horizontal(|mut strip| {
                                         strip.cell(|ui| {
-                                            ui.label(if file.is_directory {
-                                                format!("📁 {}", file.name)
-                                            } else {
-                                                format!("📄 {}", file.name)
-                                            });
+                                            ui.allocate_ui_with_layout(
+                                                ui.available_size(),
+                                                egui::Layout::left_to_right(egui::Align::Center),
+                                                |ui| {
+                                                    ui.label(if file.is_directory {
+                                                        format!("📁 {}", file.name)
+                                                    } else {
+                                                        format!("📄 {}", file.name)
+                                                    });
+                                                },
+                                            );
                                         });
                                         strip.cell(|ui| {
-                                            ui.label(&file.size);
+                                            ui.allocate_ui_with_layout(
+                                                ui.available_size(),
+                                                egui::Layout::left_to_right(egui::Align::Center),
+                                                |ui| {
+                                                    ui.label(&file.size);
+                                                },
+                                            );
                                         });
                                         strip.cell(|ui| {
-                                            ui.label(&file.file_type);
+                                            ui.allocate_ui_with_layout(
+                                                ui.available_size(),
+                                                egui::Layout::left_to_right(egui::Align::Center),
+                                                |ui| {
+                                                    ui.label(&file.file_type);
+                                                },
+                                            );
                                         });
                                         strip.cell(|ui| {
-                                            ui.label(&file.modified);
+                                            ui.allocate_ui_with_layout(
+                                                ui.available_size(),
+                                                egui::Layout::left_to_right(egui::Align::Center),
+                                                |ui| {
+                                                    ui.label(&file.modified);
+                                                },
+                                            );
                                         });
                                     });
                             })

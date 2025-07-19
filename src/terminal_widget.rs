@@ -337,6 +337,9 @@ impl TerminalWidget {
                             egui::Key::Escape => {
                                 output.extend_from_slice(b"\x1b");
                             }
+                            egui::Key::U if i.modifiers.ctrl => {
+                                output.extend_from_slice(b"\x15");
+                            }
                             _ => {}
                         }
                     }

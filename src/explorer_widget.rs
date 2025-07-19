@@ -107,10 +107,12 @@ impl ExplorerWidget {
                                     && file.is_directory
                                     && let Some(input) = crate::app::INPUT_BUFFER.get()
                                 {
+                                    let cd_command =
+                                        format!("cd {}", file.name.replace(" ", "\\ "));
+                                    let b = format!("\x15{cd_command}/\r");
+
                                     let mut input = input.lock();
-                                    input.extend_from_slice(b"\x15");
-                                    input.extend_from_slice(format!("cd {}", file.name).as_bytes());
-                                    input.extend_from_slice(b"\r");
+                                    input.extend_from_slice(b.as_bytes());
                                 }
 
                                 StripBuilder::new(ui)

@@ -1,3 +1,4 @@
+use chrono::{DateTime, Local};
 use eframe::egui;
 use egui_extras::{Size, StripBuilder};
 use walkdir::WalkDir;
@@ -6,7 +7,6 @@ use crate::utils::to_human_readable_size;
 
 pub struct ExplorerWidget {
     files: Vec<FileItem>,
-    selected_item_index: Option<usize>,
     current_directory: Option<String>,
 }
 
@@ -22,7 +22,6 @@ impl ExplorerWidget {
     pub fn new() -> Self {
         Self {
             files: Vec::new(),
-            selected_item_index: None,
             current_directory: None,
         }
     }
@@ -129,17 +128,14 @@ impl ExplorerWidget {
             } else {
                 to_human_readable_size(metadata.len())
             };
-            let modified = metadata
-                .modified()?
-                .duration_since(std::time::UNIX_EPOCH)
-                .map(|d| format!("{d:?}"))
-                .unwrap_or_else(|_| "N/A".to_string());
+            let modified: DateTime<Local> = metadata.modified()?.into();
+            let formatted_modified = modified.format("%Y-%m-%d %H:%M").to_string();
 
             self.files.push(FileItem {
                 name: entry.file_name().to_string_lossy().to_string(),
                 size,
                 file_type,
-                modified,
+                modified: formatted_modified,
                 is_directory: metadata.is_dir(),
             });
         }

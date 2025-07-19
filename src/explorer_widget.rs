@@ -8,6 +8,7 @@ use crate::utils::to_human_readable_size;
 pub struct ExplorerWidget {
     files: Vec<FileItem>,
     current_directory: Option<String>,
+    selected_index: Option<usize>,
 }
 
 struct FileItem {
@@ -23,6 +24,7 @@ impl ExplorerWidget {
         Self {
             files: Vec::new(),
             current_directory: None,
+            selected_index: None,
         }
     }
 
@@ -74,12 +76,29 @@ impl ExplorerWidget {
 
                         for (index, file) in self.files.iter().enumerate() {
                             strip.cell(|ui| {
-                                if index % 2 == 1 {
+                                let is_selected = self.selected_index == Some(index);
+
+                                let bg_color = if is_selected {
+                                    ui.style().visuals.selection.bg_fill
+                                } else if index % 2 == 1 {
+                                    ui.style().visuals.faint_bg_color
+                                } else {
+                                    egui::Color32::TRANSPARENT
+                                };
+
+                                if bg_color != egui::Color32::TRANSPARENT {
                                     ui.painter().rect_filled(
                                         ui.available_rect_before_wrap(),
                                         0.0,
-                                        ui.style().visuals.faint_bg_color,
+                                        bg_color,
                                     );
+                                }
+
+                                let rect = ui.max_rect();
+                                let id = ui.make_persistent_id(index);
+                                let response = ui.interact(rect, id, egui::Sense::click());
+                                if response.clicked() {
+                                    self.selected_index = Some(index);
                                 }
 
                                 StripBuilder::new(ui)
@@ -98,6 +117,7 @@ impl ExplorerWidget {
                                             file.file_type.clone(),
                                             file.modified.clone(),
                                         ];
+
                                         for content in contents {
                                             strip.cell(|ui| {
                                                 ui.allocate_ui_with_layout(

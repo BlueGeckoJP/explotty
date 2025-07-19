@@ -47,8 +47,8 @@ impl ExplorerWidget {
             .auto_shrink([false, false])
             .show(ui, |ui| {
                 StripBuilder::new(ui)
-                    .size(Size::exact(20.0))
-                    .sizes(Size::exact(20.0), self.files.len())
+                    .size(Size::exact(28.0))
+                    .sizes(Size::exact(24.0), self.files.len())
                     .vertical(|mut strip| {
                         strip.cell(|ui| {
                             StripBuilder::new(ui)

@@ -139,6 +139,8 @@ impl ExplorerWidget {
     }
     pub fn refresh_files(&mut self) -> anyhow::Result<()> {
         self.files.clear();
+        self.selected_index = None;
+
         for entry in WalkDir::new(self.current_directory.clone().unwrap_or_default())
             .max_depth(1)
             .into_iter()

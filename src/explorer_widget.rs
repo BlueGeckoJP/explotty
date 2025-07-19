@@ -57,42 +57,18 @@ impl ExplorerWidget {
                                 .size(Size::exact(80.0))
                                 .size(Size::exact(120.0))
                                 .horizontal(|mut strip| {
-                                    strip.cell(|ui| {
-                                        ui.allocate_ui_with_layout(
-                                            ui.available_size(),
-                                            egui::Layout::left_to_right(egui::Align::Center),
-                                            |ui| {
-                                                ui.label("Name");
-                                            },
-                                        );
-                                    });
-                                    strip.cell(|ui| {
-                                        ui.allocate_ui_with_layout(
-                                            ui.available_size(),
-                                            egui::Layout::left_to_right(egui::Align::Center),
-                                            |ui| {
-                                                ui.label("Size");
-                                            },
-                                        );
-                                    });
-                                    strip.cell(|ui| {
-                                        ui.allocate_ui_with_layout(
-                                            ui.available_size(),
-                                            egui::Layout::left_to_right(egui::Align::Center),
-                                            |ui| {
-                                                ui.label("Type");
-                                            },
-                                        );
-                                    });
-                                    strip.cell(|ui| {
-                                        ui.allocate_ui_with_layout(
-                                            ui.available_size(),
-                                            egui::Layout::left_to_right(egui::Align::Center),
-                                            |ui| {
-                                                ui.label("Modified");
-                                            },
-                                        );
-                                    });
+                                    let contents = ["Name", "Size", "Type", "Modified"];
+                                    for title in contents {
+                                        strip.cell(|ui| {
+                                            ui.allocate_ui_with_layout(
+                                                ui.available_size(),
+                                                egui::Layout::left_to_right(egui::Align::Center),
+                                                |ui| {
+                                                    ui.label(title);
+                                                },
+                                            );
+                                        });
+                                    }
                                 });
                         });
 
@@ -112,46 +88,29 @@ impl ExplorerWidget {
                                     .size(Size::exact(80.0))
                                     .size(Size::exact(120.0))
                                     .horizontal(|mut strip| {
-                                        strip.cell(|ui| {
-                                            ui.allocate_ui_with_layout(
-                                                ui.available_size(),
-                                                egui::Layout::left_to_right(egui::Align::Center),
-                                                |ui| {
-                                                    ui.label(if file.is_directory {
-                                                        format!("📁 {}", file.name)
-                                                    } else {
-                                                        format!("📄 {}", file.name)
-                                                    });
-                                                },
-                                            );
-                                        });
-                                        strip.cell(|ui| {
-                                            ui.allocate_ui_with_layout(
-                                                ui.available_size(),
-                                                egui::Layout::left_to_right(egui::Align::Center),
-                                                |ui| {
-                                                    ui.label(&file.size);
-                                                },
-                                            );
-                                        });
-                                        strip.cell(|ui| {
-                                            ui.allocate_ui_with_layout(
-                                                ui.available_size(),
-                                                egui::Layout::left_to_right(egui::Align::Center),
-                                                |ui| {
-                                                    ui.label(&file.file_type);
-                                                },
-                                            );
-                                        });
-                                        strip.cell(|ui| {
-                                            ui.allocate_ui_with_layout(
-                                                ui.available_size(),
-                                                egui::Layout::left_to_right(egui::Align::Center),
-                                                |ui| {
-                                                    ui.label(&file.modified);
-                                                },
-                                            );
-                                        });
+                                        let contents = [
+                                            if file.is_directory {
+                                                format!("📁 {}", file.name)
+                                            } else {
+                                                format!("📄 {}", file.name)
+                                            },
+                                            file.size.clone(),
+                                            file.file_type.clone(),
+                                            file.modified.clone(),
+                                        ];
+                                        for content in contents {
+                                            strip.cell(|ui| {
+                                                ui.allocate_ui_with_layout(
+                                                    ui.available_size(),
+                                                    egui::Layout::left_to_right(
+                                                        egui::Align::Center,
+                                                    ),
+                                                    |ui| {
+                                                        ui.label(content);
+                                                    },
+                                                );
+                                            });
+                                        }
                                     });
                             })
                         }

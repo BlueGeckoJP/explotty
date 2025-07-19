@@ -101,6 +101,16 @@ impl ExplorerWidget {
                                     self.selected_index = Some(index);
                                 }
 
+                                if response.double_clicked()
+                                    && file.is_directory
+                                    && let Some(input) = crate::app::INPUT_BUFFER.get()
+                                {
+                                    let mut input = input.lock();
+                                    input.extend_from_slice(b"\x15");
+                                    input.extend_from_slice(format!("cd {}", file.name).as_bytes());
+                                    input.extend_from_slice(b"\r");
+                                }
+
                                 StripBuilder::new(ui)
                                     .size(Size::remainder().at_least(100.0))
                                     .size(Size::exact(80.0))

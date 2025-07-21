@@ -129,12 +129,35 @@ impl ExplorerWidget {
                                     .size(Size::exact(80.0))
                                     .size(Size::exact(120.0))
                                     .horizontal(|mut strip| {
+                                        strip.cell(|ui| {
+                                            ui.allocate_ui_with_layout(
+                                                ui.available_size(),
+                                                egui::Layout::left_to_right(egui::Align::Center),
+                                                |ui| {
+                                                    let file_path = Path::new(
+                                                        &self
+                                                            .current_directory
+                                                            .as_ref()
+                                                            .unwrap_or(&String::new()),
+                                                    )
+                                                    .join(&file.name);
+
+                                                    let icon_path = format!(
+                                                        "file://{}",
+                                                        icon_finder::find_icon(
+                                                            file_path.to_string_lossy().as_ref(),
+                                                            48
+                                                        )
+                                                        .unwrap_or_default()
+                                                    );
+
+                                                    ui.image(icon_path);
+                                                    ui.label(&file.name);
+                                                },
+                                            );
+                                        });
+
                                         let contents = [
-                                            if file.is_directory {
-                                                format!("📁 {}", file.name)
-                                            } else {
-                                                format!("📄 {}", file.name)
-                                            },
                                             file.size.clone(),
                                             file.file_type.clone(),
                                             file.modified.clone(),

@@ -134,14 +134,20 @@ impl ExplorerWidget {
                                     .size(Size::exact(120.0))
                                     .horizontal(|mut strip| {
                                         strip.cell(|ui| {
-                                            ui.allocate_ui_with_layout(
-                                                ui.available_size(),
-                                                egui::Layout::left_to_right(egui::Align::Center),
-                                                |ui| {
-                                                    ui.image(&file.icon_path);
-                                                    ui.label(&file.name);
-                                                },
-                                            );
+                                            egui::ScrollArea::horizontal()
+                                                .auto_shrink([false, false])
+                                                .show(ui, |ui| {
+                                                    ui.allocate_ui_with_layout(
+                                                        ui.available_size(),
+                                                        egui::Layout::left_to_right(
+                                                            egui::Align::Center,
+                                                        ),
+                                                        |ui| {
+                                                            ui.image(&file.icon_path);
+                                                            ui.label(&file.name);
+                                                        },
+                                                    );
+                                                });
                                         });
 
                                         let contents = [
@@ -152,15 +158,19 @@ impl ExplorerWidget {
 
                                         for content in contents {
                                             strip.cell(|ui| {
-                                                ui.allocate_ui_with_layout(
-                                                    ui.available_size(),
-                                                    egui::Layout::left_to_right(
-                                                        egui::Align::Center,
-                                                    ),
-                                                    |ui| {
-                                                        ui.label(content);
-                                                    },
-                                                );
+                                                egui::ScrollArea::horizontal()
+                                                    .auto_shrink([false, false])
+                                                    .show(ui, |ui| {
+                                                        ui.allocate_ui_with_layout(
+                                                            ui.available_size(),
+                                                            egui::Layout::left_to_right(
+                                                                egui::Align::Center,
+                                                            ),
+                                                            |ui| {
+                                                                ui.label(content);
+                                                            },
+                                                        );
+                                                    });
                                             });
                                         }
                                     });

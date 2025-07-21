@@ -71,17 +71,18 @@ pub fn to_human_readable_size(size: u64) -> String {
     }
 }
 
-pub fn find_icon(filename: &str, size: i32) -> Option<String> {
-    let file_path = Path::new(filename);
-    let content_type = match file_path.is_dir() {
+pub fn get_mime_type_from_path(path: &Path) -> String {
+    match path.is_dir() {
         true => "inode/directory".to_string(),
         false => {
-            let (content_type, _) = gio::content_type_guess(Some(file_path), None);
+            let (content_type, _) = gio::content_type_guess(Some(path), None);
             content_type.to_string()
         }
-    };
+    }
+}
 
-    let icon = gio::content_type_get_icon(&content_type);
+fn find_icon(mime_type: &str, size: i32) -> Option<String> {
+    let icon = gio::content_type_get_icon(mime_type);
 
     if let Some(themed_icon) = icon.downcast_ref::<gio::ThemedIcon>() {
         let icon_names = themed_icon.names();
@@ -100,4 +101,13 @@ pub fn find_icon(filename: &str, size: i32) -> Option<String> {
     }
 
     None
+}
+
+pub fn get_formatted_icon_path(mime_type: &str, size: i32) -> String {
+    format!("file://{}", find_icon(mime_type, size).unwrap_or_default())
+}
+
+pub fn get_desc_from_mime_type(mime_type: &str) -> String {
+    let desc = gio::content_type_get_description(mime_type);
+    desc.to_string()
 }

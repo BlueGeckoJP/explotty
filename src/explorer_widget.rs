@@ -5,7 +5,10 @@ use eframe::egui;
 use egui_extras::{Size, StripBuilder};
 use walkdir::WalkDir;
 
-use crate::utils::{find_icon, to_human_readable_size};
+use crate::utils::{
+    get_desc_from_mime_type, get_formatted_icon_path, get_mime_type_from_path,
+    to_human_readable_size,
+};
 
 pub struct ExplorerWidget {
     files: Vec<FileItem>,
@@ -19,6 +22,7 @@ struct FileItem {
     file_type: String,
     modified: String,
     is_directory: bool,
+    icon_path: String,
 }
 
 impl ExplorerWidget {
@@ -134,24 +138,7 @@ impl ExplorerWidget {
                                                 ui.available_size(),
                                                 egui::Layout::left_to_right(egui::Align::Center),
                                                 |ui| {
-                                                    let file_path = Path::new(
-                                                        &self
-                                                            .current_directory
-                                                            .as_ref()
-                                                            .unwrap_or(&String::new()),
-                                                    )
-                                                    .join(&file.name);
-
-                                                    let icon_path = format!(
-                                                        "file://{}",
-                                                        find_icon(
-                                                            file_path.to_string_lossy().as_ref(),
-                                                            48
-                                                        )
-                                                        .unwrap_or_default()
-                                                    );
-
-                                                    ui.image(icon_path);
+                                                    ui.image(&file.icon_path);
                                                     ui.label(&file.name);
                                                 },
                                             );
@@ -195,6 +182,7 @@ impl ExplorerWidget {
                     file_type: "Directory".to_string(),
                     modified: "--".to_string(),
                     is_directory: true,
+                    icon_path: get_formatted_icon_path("inode/directory", 48),
                 });
             }
         }
@@ -205,11 +193,12 @@ impl ExplorerWidget {
             .into_iter()
             .filter_map(Result::ok)
         {
+            let mime_type = get_mime_type_from_path(entry.path());
             let metadata = entry.metadata()?;
             let file_type = if metadata.is_dir() {
                 "Directory".to_string()
             } else {
-                "File".to_string()
+                get_desc_from_mime_type(&mime_type)
             };
             let size = if metadata.is_dir() {
                 "--".to_string()
@@ -225,6 +214,7 @@ impl ExplorerWidget {
                 file_type,
                 modified: formatted_modified,
                 is_directory: metadata.is_dir(),
+                icon_path: get_formatted_icon_path(&mime_type, 48),
             });
         }
 

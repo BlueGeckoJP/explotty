@@ -26,27 +26,39 @@ pub fn get_current_dir_from_pty(pid: u32) -> Option<String> {
 }
 
 pub fn load_system_font(ctx: &Context) -> anyhow::Result<()> {
-    let handle =
-        SystemSource::new().select_best_match(&[FamilyName::Monospace], &Properties::new())?;
+    let mut fonts = FontDefinitions::default();
 
-    let buf: Vec<u8> = match handle {
+    let sans_serif_handle =
+        SystemSource::new().select_best_match(&[FamilyName::SansSerif], &Properties::new())?;
+    let sans_serif_buf: Vec<u8> = match sans_serif_handle {
         Handle::Memory { bytes, .. } => bytes.to_vec(),
         Handle::Path { path, .. } => std::fs::read(path)?,
     };
 
-    let mut fonts = FontDefinitions::default();
+    let monospace_handle =
+        SystemSource::new().select_best_match(&[FamilyName::Monospace], &Properties::new())?;
+    let monospace_buf: Vec<u8> = match monospace_handle {
+        Handle::Memory { bytes, .. } => bytes.to_vec(),
+        Handle::Path { path, .. } => std::fs::read(path)?,
+    };
 
-    const FONT_ID: &str = "System Sans Serif";
+    const SANS_SERIF_FONT_ID: &str = "System Sans Serif";
+    const MONOSPACE_FONT_ID: &str = "System Monospace";
 
-    fonts
-        .font_data
-        .insert(FONT_ID.to_string(), FontData::from_owned(buf).into());
+    fonts.font_data.insert(
+        SANS_SERIF_FONT_ID.to_string(),
+        FontData::from_owned(sans_serif_buf).into(),
+    );
+    fonts.font_data.insert(
+        MONOSPACE_FONT_ID.to_string(),
+        FontData::from_owned(monospace_buf).into(),
+    );
 
     if let Some(vec) = fonts.families.get_mut(&FontFamily::Proportional) {
-        vec.insert(0, FONT_ID.to_string());
+        vec.insert(0, SANS_SERIF_FONT_ID.to_string());
     }
     if let Some(vec) = fonts.families.get_mut(&FontFamily::Monospace) {
-        vec.insert(0, FONT_ID.to_string());
+        vec.insert(0, MONOSPACE_FONT_ID.to_string());
     }
 
     ctx.set_fonts(fonts);

@@ -7,6 +7,8 @@ use font_kit::{
 use gio::glib::object::Cast;
 use gtk::traits::IconThemeExt;
 
+use crate::CONFIG;
+
 // Unix-like systems only
 pub fn get_current_dir_from_pty(pid: u32) -> Option<String> {
     #[cfg(unix)]
@@ -28,15 +30,24 @@ pub fn get_current_dir_from_pty(pid: u32) -> Option<String> {
 pub fn load_system_font(ctx: &Context) -> anyhow::Result<()> {
     let mut fonts = FontDefinitions::default();
 
+    let (sans_serif_family, monospace_family) = if let Some(config) = CONFIG.get() {
+        (
+            FamilyName::Title(config.ui_font_family.clone().unwrap_or_default()),
+            FamilyName::Title(config.terminal_font_family.clone().unwrap_or_default()),
+        )
+    } else {
+        (FamilyName::SansSerif, FamilyName::Monospace)
+    };
+
     let sans_serif_handle =
-        SystemSource::new().select_best_match(&[FamilyName::SansSerif], &Properties::new())?;
+        SystemSource::new().select_best_match(&[sans_serif_family], &Properties::new())?;
     let sans_serif_buf: Vec<u8> = match sans_serif_handle {
         Handle::Memory { bytes, .. } => bytes.to_vec(),
         Handle::Path { path, .. } => std::fs::read(path)?,
     };
 
     let monospace_handle =
-        SystemSource::new().select_best_match(&[FamilyName::Monospace], &Properties::new())?;
+        SystemSource::new().select_best_match(&[monospace_family], &Properties::new())?;
     let monospace_buf: Vec<u8> = match monospace_handle {
         Handle::Memory { bytes, .. } => bytes.to_vec(),
         Handle::Path { path, .. } => std::fs::read(path)?,

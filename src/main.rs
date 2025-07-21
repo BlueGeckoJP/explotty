@@ -1,4 +1,5 @@
 mod app;
+mod config;
 mod explorer_widget;
 mod terminal_buffer;
 mod terminal_cell;
@@ -8,7 +9,11 @@ mod utils;
 #[macro_use]
 extern crate log;
 
+use std::sync::{Arc, OnceLock};
+
 use crate::app::App;
+
+static CONFIG: OnceLock<Arc<config::Config>> = OnceLock::new();
 
 fn main() -> eframe::Result {
     env_logger::init();
@@ -18,6 +23,18 @@ fn main() -> eframe::Result {
         return Err(eframe::Error::AppCreation(
             "Failed to initialize GTK".into(),
         ));
+    }
+
+    let config_path = config::Config::get_first_existing_path();
+    match config_path {
+        Some(path) => {
+            let config = config::Config::load(&path).unwrap_or_default();
+            CONFIG.set(Arc::new(config)).unwrap();
+        }
+        None => {
+            warn!("No configuration file found, using default settings");
+            CONFIG.set(Arc::new(config::Config::default())).unwrap();
+        }
     }
 
     let options = eframe::NativeOptions {

@@ -13,6 +13,13 @@ use crate::app::App;
 fn main() -> eframe::Result {
     env_logger::init();
 
+    if gtk::init().is_err() {
+        eprintln!("Failed to initialize GTK");
+        return Err(eframe::Error::AppCreation(
+            "Failed to initialize GTK".into(),
+        ));
+    }
+
     let options = eframe::NativeOptions {
         viewport: eframe::egui::ViewportBuilder::default()
             .with_inner_size(eframe::egui::vec2(800.0, 600.0)),

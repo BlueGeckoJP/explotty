@@ -5,7 +5,7 @@ use eframe::egui;
 use egui_extras::{Size, StripBuilder};
 use walkdir::WalkDir;
 
-use crate::utils::to_human_readable_size;
+use crate::utils::{find_icon, to_human_readable_size};
 
 pub struct ExplorerWidget {
     files: Vec<FileItem>,
@@ -144,7 +144,7 @@ impl ExplorerWidget {
 
                                                     let icon_path = format!(
                                                         "file://{}",
-                                                        icon_finder::find_icon(
+                                                        find_icon(
                                                             file_path.to_string_lossy().as_ref(),
                                                             48
                                                         )

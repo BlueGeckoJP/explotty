@@ -1264,7 +1264,8 @@ dependencies = [
  "egui_extras",
  "env_logger",
  "font-kit",
- "icon_finder",
+ "gio 0.21.0",
+ "gtk",
  "log",
  "open",
  "portable-pty",
@@ -1972,14 +1973,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f31827a206f56af32e590ba56d5d2d085f558508192593743f16b2306495269f"
 dependencies = [
  "cc",
-]
-
-[[package]]
-name = "icon_finder"
-version = "0.1.0"
-dependencies = [
- "gio 0.21.0",
- "gtk",
 ]
 
 [[package]]

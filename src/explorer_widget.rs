@@ -1,7 +1,7 @@
 use std::path::Path;
 
 use chrono::{DateTime, Local};
-use eframe::egui;
+use eframe::egui::{self, RichText};
 use egui_extras::{Size, StripBuilder};
 use walkdir::WalkDir;
 
@@ -22,6 +22,7 @@ struct FileItem {
     file_type: String,
     modified: String,
     is_directory: bool,
+    is_hidden: bool,
     icon_path: String,
 }
 
@@ -144,7 +145,12 @@ impl ExplorerWidget {
                                                         ),
                                                         |ui| {
                                                             ui.image(&file.icon_path);
-                                                            ui.label(&file.name);
+                                                            ui.label(if file.is_hidden {
+                                                                RichText::new(&file.name)
+                                                                    .color(egui::Color32::DARK_GRAY)
+                                                            } else {
+                                                                RichText::new(&file.name)
+                                                            });
                                                         },
                                                     );
                                                 });
@@ -192,6 +198,7 @@ impl ExplorerWidget {
                     file_type: "Directory".to_string(),
                     modified: "--".to_string(),
                     is_directory: true,
+                    is_hidden: false,
                     icon_path: get_formatted_icon_path("inode/directory", 48),
                 });
             }
@@ -224,9 +231,24 @@ impl ExplorerWidget {
                 file_type,
                 modified: formatted_modified,
                 is_directory: metadata.is_dir(),
+                is_hidden: entry.file_name().to_string_lossy().starts_with('.'),
                 icon_path: get_formatted_icon_path(&mime_type, 48),
             });
         }
+
+        self.files.sort_by(|a, b| {
+            if !a.is_hidden && b.is_hidden {
+                std::cmp::Ordering::Less
+            } else if a.is_hidden && !b.is_hidden {
+                std::cmp::Ordering::Greater
+            } else if a.is_directory && !b.is_directory {
+                std::cmp::Ordering::Less
+            } else if !a.is_directory && b.is_directory {
+                std::cmp::Ordering::Greater
+            } else {
+                a.name.cmp(&b.name)
+            }
+        });
 
         Ok(())
     }

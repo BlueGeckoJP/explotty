@@ -45,12 +45,12 @@ impl Default for App {
 }
 
 impl App {
-    pub fn new(_cc: &eframe::CreationContext<'_>) -> Self {
+    pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
         let mut app = Self::default();
 
-        egui_extras::install_image_loaders(&_cc.egui_ctx);
+        egui_extras::install_image_loaders(&cc.egui_ctx);
 
-        crate::utils::load_system_font(&_cc.egui_ctx).expect("Failed to load system font");
+        crate::utils::load_system_font(&cc.egui_ctx).expect("Failed to load system font");
         app.start_pty();
 
         app

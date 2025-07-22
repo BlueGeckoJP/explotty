@@ -75,11 +75,6 @@ impl TerminalBuffer {
     }
 
     pub fn put_char(&mut self, ch: char) {
-        // If cursor position is out of bounds, move to a new row
-        if self.cursor_x >= self.width {
-            self.new_line();
-        }
-
         // Insert the character at the current cursor position
         if self.cursor_y < self.height {
             self.cells[self.cursor_y][self.cursor_x] = TerminalCell {
@@ -90,7 +85,7 @@ impl TerminalBuffer {
                 underline: self.current_underline,
                 italic: self.current_italic,
             };
-            self.cursor_x += 1;
+            self.cursor_x = (self.cursor_x + 1).min(self.width.saturating_sub(1));
         }
     }
 

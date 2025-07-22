@@ -15,6 +15,9 @@ pub struct TerminalWidget {
     // Storage location for current screen information used when Alternative Screen Buffer is used
     saved_screen_buffer: Option<TerminalBuffer>,
     decckm_mode: bool, // DECCKM - DEC Private Mode
+    scroll_offset: usize,
+    max_scroll_lines: usize,
+    scrollback_buffer: Vec<Vec<TerminalCell>>,
 }
 
 impl TerminalWidget {
@@ -32,6 +35,9 @@ impl TerminalWidget {
             bracket_paste_mode: false,
             saved_screen_buffer: None,
             decckm_mode: false,
+            scroll_offset: 0,
+            max_scroll_lines: 1000,
+            scrollback_buffer: Vec::new(),
         }
     }
 
@@ -45,9 +51,13 @@ impl TerminalWidget {
         // Adjust buffer size
         if cols != self.buffer.width || rows != self.buffer.height {
             self.buffer.resize(cols, rows);
+            self.adjust_scrollback_buffer_width(cols);
         }
 
         let response = ui.allocate_response(available_size, egui::Sense::click_and_drag());
+
+        // Handle scrolling with mouse wheel and keyboard
+        self.handle_scroll(ui);
 
         // Selection logic
         let rect = response.rect;
@@ -57,8 +67,8 @@ impl TerminalWidget {
         {
             let col = ((pos.x - rect.left()) / self.char_width).floor() as usize;
             let row = ((pos.y - rect.top()) / self.line_height).floor() as usize;
-            let clamped_col = col.min(self.buffer.width - 1);
-            let clamped_row = row.min(self.buffer.height - 1);
+            let clamped_col = col.min(self.buffer.width.saturating_sub(1));
+            let clamped_row = row.min(self.buffer.height.saturating_sub(1));
             self.selection_start = Some((clamped_col, clamped_row));
             self.selection_end = Some((clamped_col, clamped_row));
         }
@@ -68,8 +78,8 @@ impl TerminalWidget {
         {
             let col = ((pos.x - rect.left()) / self.char_width).floor() as usize;
             let row = ((pos.y - rect.top()) / self.line_height).floor() as usize;
-            let clamped_col = col.min(self.buffer.width - 1);
-            let clamped_row = row.min(self.buffer.height - 1);
+            let clamped_col = col.min(self.buffer.width.saturating_sub(1));
+            let clamped_row = row.min(self.buffer.height.saturating_sub(1));
             self.selection_end = Some((clamped_col, clamped_row));
         }
 
@@ -81,12 +91,86 @@ impl TerminalWidget {
         // Draw background
         ui.painter().rect_filled(response.rect, 0.0, Color32::BLACK);
 
-        // Draw the terminal cells (characters)
-        for (row_index, row) in self.buffer.cells.iter().enumerate() {
+        // Draw the terminal cells (characters) with scrolling consideration
+        self.draw_terminal_content(ui, &rect);
+
+        // Draw cursor (only when at the bottom of scroll)
+        if self.scroll_offset == 0 {
+            self.draw_cursor(ui, &rect);
+        }
+
+        // Draw selection
+        self.draw_selection(ui, &rect);
+
+        // Draw scroll indicator if scrolled
+        if self.scroll_offset > 0 {
+            self.draw_scroll_indicator(ui, &rect);
+        }
+
+        response
+    }
+
+    fn handle_scroll(&mut self, ui: &mut egui::Ui) {
+        ui.input(|i| {
+            let scroll_delta = i.smooth_scroll_delta.y;
+            if scroll_delta.abs() > 0.0 {
+                let lines_to_scroll = (scroll_delta / self.line_height).round() as i32;
+
+                if lines_to_scroll > 0 {
+                    // Scrolling down
+                    let max_scroll = self.scrollback_buffer.len();
+                    self.scroll_offset =
+                        (self.scroll_offset + lines_to_scroll as usize).min(max_scroll);
+                } else {
+                    // Scrolling up
+                    self.scroll_offset =
+                        self.scroll_offset.saturating_sub(-lines_to_scroll as usize);
+                }
+            }
+
+            // Handle Page Up/Page Down keys
+            for event in &i.events {
+                if let egui::Event::Key {
+                    key,
+                    pressed: true,
+                    modifiers,
+                    ..
+                } = event
+                {
+                    match key {
+                        egui::Key::PageUp => {
+                            let scroll_amount = self.buffer.height.saturating_sub(1);
+                            let max_scroll = self.scrollback_buffer.len();
+                            self.scroll_offset =
+                                (self.scroll_offset + scroll_amount).min(max_scroll);
+                        }
+                        egui::Key::PageDown => {
+                            let scroll_amount = self.buffer.height.saturating_sub(1);
+                            self.scroll_offset = self.scroll_offset.saturating_sub(scroll_amount);
+                        }
+                        egui::Key::Home if modifiers.ctrl => {
+                            // Ctrl+Home: Go to top of history
+                            self.scroll_offset = self.scrollback_buffer.len();
+                        }
+                        egui::Key::End if modifiers.ctrl => {
+                            // Ctrl+End: Go to bottom (current)
+                            self.scroll_offset = 0;
+                        }
+                        _ => {}
+                    }
+                }
+            }
+        });
+    }
+
+    fn draw_terminal_content(&self, ui: &mut egui::Ui, rect: &Rect) {
+        let visible_lines = self.get_visible_lines();
+
+        for (row_index, row) in visible_lines.iter().enumerate() {
             for (col_index, cell) in row.iter().enumerate() {
                 let pos = Pos2::new(
-                    response.rect.left() + col_index as f32 * self.char_width,
-                    response.rect.top() + row_index as f32 * self.line_height,
+                    rect.left() + col_index as f32 * self.char_width,
+                    rect.top() + row_index as f32 * self.line_height,
                 );
 
                 // Draw background color
@@ -152,14 +236,70 @@ impl TerminalWidget {
                 }
             }
         }
+    }
 
-        // Draw cursor
-        self.draw_cursor(ui, &rect);
+    fn get_visible_lines(&self) -> Vec<Vec<TerminalCell>> {
+        if self.scroll_offset == 0 {
+            // At the bottom, show current buffer
+            return self.buffer.cells.clone();
+        }
 
-        // Draw selection
-        self.draw_selection(ui, &rect);
+        let mut visible_lines = Vec::new();
 
-        response
+        for i in 0..self.buffer.height {
+            let line_index_from_bottom = self.scroll_offset + self.buffer.height - 1 - i;
+
+            if line_index_from_bottom < self.buffer.height {
+                // This line is in the current buffer
+                let buffer_line_index = self.buffer.height - 1 - line_index_from_bottom;
+                visible_lines.push(self.buffer.cells[buffer_line_index].clone());
+            } else {
+                // This line is in the scrollback buffer
+                let scrollback_index = line_index_from_bottom - self.buffer.height;
+                if scrollback_index < self.scrollback_buffer.len() {
+                    let scrollback_line_index = self.scrollback_buffer.len() - 1 - scrollback_index;
+                    visible_lines.push(self.scrollback_buffer[scrollback_line_index].clone());
+                } else {
+                    // Empty line if we're beyond available history
+                    visible_lines.push(vec![TerminalCell::default(); self.buffer.width]);
+                }
+            }
+        }
+
+        visible_lines
+    }
+
+    fn draw_scroll_indicator(&self, ui: &mut egui::Ui, rect: &Rect) {
+        let indicator_text = format!("[↑{}]", self.scroll_offset);
+        let indicator_pos = Pos2::new(rect.right() - 100.0, rect.top() + 10.0);
+
+        ui.painter().text(
+            indicator_pos,
+            egui::Align2::LEFT_TOP,
+            indicator_text,
+            FontId::monospace(self.font_size * 0.8),
+            Color32::YELLOW,
+        );
+    }
+
+    fn add_line_to_scrollback(&mut self, line: Vec<TerminalCell>) {
+        self.scrollback_buffer.push(line);
+
+        // Limit the size of scrollback buffer
+        if self.scrollback_buffer.len() > self.max_scroll_lines {
+            self.scrollback_buffer.remove(0);
+        }
+    }
+
+    fn adjust_scrollback_buffer_width(&mut self, new_width: usize) {
+        // Adjust existing scrollback lines to new width
+        for line in &mut self.scrollback_buffer {
+            if line.len() < new_width {
+                line.resize(new_width, TerminalCell::default());
+            } else if line.len() > new_width {
+                line.truncate(new_width);
+            }
+        }
     }
 
     fn draw_cursor(&mut self, ui: &mut egui::Ui, rect: &Rect) {
@@ -206,6 +346,9 @@ impl TerminalWidget {
         let mut output = Vec::new();
         let mut text_to_copy = None;
 
+        // If we're scrolled up, any input should bring us back to bottom
+        let should_scroll_to_bottom = self.scroll_offset > 0;
+
         ctx.input(|i| {
             for event in &i.events {
                 match event {
@@ -216,9 +359,12 @@ impl TerminalWidget {
                             let (start_row, end_row) = (start.1.min(end.1), start.1.max(end.1));
                             let (start_col, end_col) = (start.0.min(end.0), start.0.max(end.0));
 
+                            let visible_lines = self.get_visible_lines();
                             for r in start_row..=end_row {
                                 for c in start_col..=end_col {
-                                    selected_text.push(self.buffer.cells[r][c].character);
+                                    if r < visible_lines.len() && c < visible_lines[r].len() {
+                                        selected_text.push(visible_lines[r][c].character);
+                                    }
                                 }
                                 if r < end_row {
                                     selected_text.push('\n');
@@ -240,6 +386,16 @@ impl TerminalWidget {
                         key, pressed: true, ..
                     } => {
                         match key {
+                            // Don't process navigation keys that should only scroll
+                            egui::Key::PageUp | egui::Key::PageDown => {
+                                // These are handled in handle_scroll
+                                continue;
+                            }
+                            egui::Key::Home | egui::Key::End if i.modifiers.ctrl => {
+                                // These are handled in handle_scroll
+                                continue;
+                            }
+
                             // Arrow keys
                             egui::Key::ArrowUp => {
                                 output.extend_from_slice(if self.decckm_mode {
@@ -358,6 +514,11 @@ impl TerminalWidget {
             }
         });
 
+        // If any input was generated and we're scrolled up, scroll to bottom
+        if !output.is_empty() && should_scroll_to_bottom {
+            self.scroll_offset = 0;
+        }
+
         // Copy text to clipboard if available
         if let Some(text) = text_to_copy {
             ctx.copy_text(text);
@@ -382,6 +543,11 @@ impl TerminalWidget {
                     cursor += 1;
                 }
                 b'\n' => {
+                    // Save the current top line to scrollback before scrolling
+                    if self.buffer.cursor_y >= self.buffer.height - 1 {
+                        let top_line = self.buffer.cells[0].clone();
+                        self.add_line_to_scrollback(top_line);
+                    }
                     self.buffer.new_line();
                     cursor += 1;
                 }
@@ -624,7 +790,11 @@ impl TerminalWidget {
                         self.buffer.clear_range(Some((0, cy)), Some((cx, cy)));
                     }
                     2 => self.buffer.clear_screen(),
-                    3 => self.buffer.clear_screen(), // Clear entire screen (including scrollback) (Not implemented yet, and same behaviour as 2)
+                    3 => {
+                        // Clear entire screen including scrollback
+                        self.buffer.clear_screen();
+                        self.scrollback_buffer.clear();
+                    }
                     _ => {
                         warn!("Unsupported erase in display parameter: {num}");
                     }

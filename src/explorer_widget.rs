@@ -109,24 +109,14 @@ impl ExplorerWidget {
                                 }
 
                                 if response.double_clicked() {
-                                    if file.is_directory
-                                        && let Some(input) = crate::app::INPUT_BUFFER.get()
-                                    {
-                                        let cd_command =
-                                            format!("cd {}", file.name.replace(" ", "\\ "));
-                                        let b = format!("\x15{cd_command}/\r");
-
-                                        let mut input = input.lock();
-                                        input.extend_from_slice(b.as_bytes());
-                                    } else {
-                                        let current_dir =
-                                            self.current_directory.clone().unwrap_or_default();
-                                        let file_path = Path::new(&current_dir).join(&file.name);
-                                        if let Err(e) = open::that(file_path) {
-                                            log::error!("Failed to open file: {e}");
-                                        }
-                                    }
+                                    Self::open_file(file, self.current_directory.clone());
                                 }
+
+                                response.context_menu(|ui| {
+                                    if ui.button("Open").clicked() {
+                                        Self::open_file(file, self.current_directory.clone());
+                                    }
+                                });
 
                                 StripBuilder::new(ui)
                                     .size(Size::remainder().at_least(100.0))
@@ -185,6 +175,25 @@ impl ExplorerWidget {
                     });
             });
     }
+
+    fn open_file(file: &FileItem, current_directory: Option<String>) {
+        if file.is_directory {
+            if let Some(input) = crate::app::INPUT_BUFFER.get() {
+                let cd_command = format!("cd {}", file.name.replace(" ", "\\ "));
+                let b = format!("\x15{cd_command}/\r");
+
+                let mut input = input.lock();
+                input.extend_from_slice(b.as_bytes());
+            }
+        } else {
+            let current_dir = current_directory.clone().unwrap_or_default();
+            let file_path = Path::new(&current_dir).join(&file.name);
+            if let Err(e) = open::that(file_path) {
+                log::error!("Failed to open file: {e}");
+            }
+        }
+    }
+
     pub fn refresh_files(&mut self) -> anyhow::Result<()> {
         self.files.clear();
         self.selected_index = None;

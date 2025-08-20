@@ -10,19 +10,31 @@ use crate::utils::{
     to_human_readable_size,
 };
 
+/// The main widget for exploring files and directories
 pub struct ExplorerWidget {
+    /// The list of files and directories in the current directory
     files: Vec<FileItem>,
+    /// The current directory being explored
     current_directory: Option<String>,
+    /// The index of the currently selected file or directory
     selected_index: Option<usize>,
 }
 
+/// This structure containing file information to be displayed in the UI
 struct FileItem {
+    /// The name of the file or directory. Not including absolute path
     name: String,
+    /// The size of the file or directory. Human readable format
     size: String,
+    /// The type description of the file or directory
     file_type: String,
-    modified: String,
+    /// The last modified date and time of the file or directory
+    modified_at: String,
+    /// Whether the item is a directory
     is_directory: bool,
+    /// Whether the item is hidden (starts with a dot)
     is_hidden: bool,
+    /// The URI path to the icon (starts with file:///)
     icon_path: String,
 }
 
@@ -159,7 +171,7 @@ impl ExplorerWidget {
                                         let contents = [
                                             file.size.clone(),
                                             file.file_type.clone(),
-                                            file.modified.clone(),
+                                            file.modified_at.clone(),
                                         ];
 
                                         for content in contents {
@@ -215,7 +227,7 @@ impl ExplorerWidget {
                     name: "..".to_string(),
                     size: "--".to_string(),
                     file_type: "Directory".to_string(),
-                    modified: "--".to_string(),
+                    modified_at: "--".to_string(),
                     is_directory: true,
                     is_hidden: false,
                     icon_path: get_formatted_icon_path("inode/directory", 48),
@@ -248,7 +260,7 @@ impl ExplorerWidget {
                 name: entry.file_name().to_string_lossy().to_string(),
                 size,
                 file_type,
-                modified: formatted_modified,
+                modified_at: formatted_modified,
                 is_directory: metadata.is_dir(),
                 is_hidden: entry.file_name().to_string_lossy().starts_with('.'),
                 icon_path: get_formatted_icon_path(&mime_type, 48),

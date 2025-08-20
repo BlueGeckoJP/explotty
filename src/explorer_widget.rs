@@ -1,9 +1,11 @@
-use std::path::{Path, PathBuf};
+use std::{
+    fs,
+    path::{Path, PathBuf},
+};
 
 use chrono::{DateTime, Local};
 use eframe::egui::{self, RichText};
 use egui_extras::{Size, StripBuilder};
-use walkdir::WalkDir;
 
 use crate::utils::{
     get_desc_from_mime_type, get_formatted_icon_path, get_mime_type_from_path,
@@ -234,36 +236,38 @@ impl ExplorerWidget {
             }
         }
 
-        for entry in WalkDir::new(self.current_directory.clone().unwrap_or_default())
-            .min_depth(1)
-            .max_depth(1)
-            .into_iter()
-            .filter_map(Result::ok)
+        for entry in
+            fs::read_dir(self.current_directory.clone().unwrap_or_default())?.filter_map(Result::ok)
         {
-            let mime_type = get_mime_type_from_path(entry.path());
-            let metadata = entry.metadata()?;
-            let file_type = if metadata.is_dir() {
-                "Directory".to_string()
+            let path = entry.path();
+            if path.is_dir() {
+                self.files.push(FileItem {
+                    name: entry.file_name().to_string_lossy().to_string(),
+                    size: "--".to_string(),
+                    file_type: "Directory".to_string(),
+                    modified_at: "--".to_string(),
+                    is_directory: true,
+                    is_hidden: entry.file_name().to_string_lossy().starts_with('.'),
+                    icon_path: get_formatted_icon_path("inode/directory", 48),
+                });
             } else {
-                get_desc_from_mime_type(&mime_type)
-            };
-            let size = if metadata.is_dir() {
-                "--".to_string()
-            } else {
-                to_human_readable_size(metadata.len())
-            };
-            let modified: DateTime<Local> = metadata.modified()?.into();
-            let formatted_modified = modified.format("%Y-%m-%d %H:%M").to_string();
+                let mime_type = get_mime_type_from_path(&path);
+                let metadata = entry.metadata()?;
+                let file_type = get_desc_from_mime_type(&mime_type);
+                let size = to_human_readable_size(metadata.len());
+                let modified: DateTime<Local> = metadata.modified()?.into();
+                let formatted_modified = modified.format("%Y-%m-%d %H:%M").to_string();
 
-            self.files.push(FileItem {
-                name: entry.file_name().to_string_lossy().to_string(),
-                size,
-                file_type,
-                modified_at: formatted_modified,
-                is_directory: metadata.is_dir(),
-                is_hidden: entry.file_name().to_string_lossy().starts_with('.'),
-                icon_path: get_formatted_icon_path(&mime_type, 48),
-            });
+                self.files.push(FileItem {
+                    name: entry.file_name().to_string_lossy().to_string(),
+                    size,
+                    file_type,
+                    modified_at: formatted_modified,
+                    is_directory: false,
+                    is_hidden: entry.file_name().to_string_lossy().starts_with('.'),
+                    icon_path: get_formatted_icon_path(&mime_type, 48),
+                });
+            }
         }
 
         self.files.sort_by(|a, b| {

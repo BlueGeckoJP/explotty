@@ -12,6 +12,10 @@ use crate::utils::{
     to_human_readable_size,
 };
 
+const COLUMN_SIZES: [f32; 4] = [100.0, 80.0, 80.0, 120.0];
+const HEADER_HEIGHT: f32 = 28.0;
+const ROW_HEIGHT: f32 = 24.0;
+
 /// The main widget for exploring files and directories
 pub struct ExplorerWidget {
     /// The list of files and directories in the current directory
@@ -70,15 +74,15 @@ impl ExplorerWidget {
             .auto_shrink([false, false])
             .show(ui, |ui| {
                 StripBuilder::new(ui)
-                    .size(Size::exact(28.0))
-                    .sizes(Size::exact(24.0), self.files.len())
+                    .size(Size::exact(HEADER_HEIGHT))
+                    .sizes(Size::exact(ROW_HEIGHT), self.files.len())
                     .vertical(|mut strip| {
                         strip.cell(|ui| {
                             StripBuilder::new(ui)
-                                .size(Size::remainder().at_least(100.0))
-                                .size(Size::exact(80.0))
-                                .size(Size::exact(80.0))
-                                .size(Size::exact(120.0))
+                                .size(Size::remainder().at_least(COLUMN_SIZES[0]))
+                                .size(Size::exact(COLUMN_SIZES[1]))
+                                .size(Size::exact(COLUMN_SIZES[2]))
+                                .size(Size::exact(COLUMN_SIZES[3]))
                                 .horizontal(|mut strip| {
                                     let contents = ["Name", "Size", "Type", "Modified"];
                                     for title in contents {
@@ -134,10 +138,10 @@ impl ExplorerWidget {
                                 });
 
                                 StripBuilder::new(ui)
-                                    .size(Size::remainder().at_least(100.0))
-                                    .size(Size::exact(80.0))
-                                    .size(Size::exact(80.0))
-                                    .size(Size::exact(120.0))
+                                    .size(Size::remainder().at_least(COLUMN_SIZES[0]))
+                                    .size(Size::exact(COLUMN_SIZES[1]))
+                                    .size(Size::exact(COLUMN_SIZES[2]))
+                                    .size(Size::exact(COLUMN_SIZES[3]))
                                     .horizontal(|mut strip| {
                                         Self::render_cell(&mut strip, |ui| {
                                             ui.image(&file.icon_path);

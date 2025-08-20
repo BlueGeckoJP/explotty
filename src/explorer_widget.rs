@@ -1,4 +1,4 @@
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use chrono::{DateTime, Local};
 use eframe::egui::{self, RichText};
@@ -130,12 +130,11 @@ impl ExplorerWidget {
                                     }
                                     if ui.button("Copy").clicked() {
                                         crate::utils::copy_file_uri_to_clipboard(
-                                            Path::new(
-                                                &self.current_directory.clone().unwrap_or_default(),
+                                            &Self::get_absolute_path_string(
+                                                self.current_directory.clone(),
+                                                &file.name,
                                             )
-                                            .join(&file.name)
-                                            .to_str()
-                                            .unwrap_or(""),
+                                            .unwrap_or_default(),
                                         );
                                     }
                                 });
@@ -282,5 +281,18 @@ impl ExplorerWidget {
         });
 
         Ok(())
+    }
+
+    fn get_absolute_path_string(
+        current_directory: Option<String>,
+        item_name: &str,
+    ) -> Option<String> {
+        if let Some(current_dir) = current_directory {
+            let mut path = PathBuf::from(current_dir);
+            path.push(item_name);
+            Some(path.to_string_lossy().to_string())
+        } else {
+            None
+        }
     }
 }

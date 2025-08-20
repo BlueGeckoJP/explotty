@@ -1,4 +1,7 @@
-use std::{path::Path, process::Command};
+use std::{
+    path::{Path, PathBuf},
+    process::Command,
+};
 
 use eframe::egui::{Context, FontData, FontDefinitions, FontFamily};
 use font_kit::{
@@ -10,14 +13,11 @@ use gtk::traits::IconThemeExt;
 use crate::CONFIG;
 
 // Unix-like systems only
-pub fn get_current_dir_from_pty(pid: u32) -> Option<String> {
+pub fn get_current_dir_from_pty(pid: u32) -> Option<PathBuf> {
     #[cfg(unix)]
     {
         let cwd_path = format!("/proc/{pid}/cwd");
-        match std::fs::read_link(cwd_path) {
-            Ok(path) => Some(path.to_string_lossy().into_owned()),
-            Err(_) => None,
-        }
+        std::fs::read_link(cwd_path).ok()
     }
 
     #[cfg(not(unix))]

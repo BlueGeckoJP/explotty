@@ -15,7 +15,7 @@ pub struct ExplorerWidget {
     /// The list of files and directories in the current directory
     files: Vec<FileItem>,
     /// The current directory being explored
-    current_directory: Option<String>,
+    current_directory: Option<PathBuf>,
     /// The index of the currently selected file or directory
     selected_index: Option<usize>,
 }
@@ -59,8 +59,8 @@ impl ExplorerWidget {
         ui.label(format!(
             "Current Directory: {}",
             self.current_directory
-                .as_ref()
-                .unwrap_or(&"N/A".to_string())
+                .clone()
+                .map_or("N/A".to_string(), |path| path.to_string_lossy().to_string())
         ));
         ui.separator();
 
@@ -197,7 +197,7 @@ impl ExplorerWidget {
             });
     }
 
-    fn open_file(file: &FileItem, current_directory: Option<String>) {
+    fn open_file(file: &FileItem, current_directory: Option<PathBuf>) {
         if file.is_directory {
             if let Some(input) = crate::app::INPUT_BUFFER.get() {
                 let cd_command = format!("cd {}", file.name.replace(" ", "\\ "));
@@ -284,11 +284,11 @@ impl ExplorerWidget {
     }
 
     fn get_absolute_path_string(
-        current_directory: Option<String>,
+        current_directory: Option<PathBuf>,
         item_name: &str,
     ) -> Option<String> {
         if let Some(current_dir) = current_directory {
-            let mut path = PathBuf::from(current_dir);
+            let mut path = current_dir;
             path.push(item_name);
             Some(path.to_string_lossy().to_string())
         } else {

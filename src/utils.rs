@@ -1,4 +1,4 @@
-use std::path::Path;
+use std::{path::Path, process::Command};
 
 use eframe::egui::{Context, FontData, FontDefinitions, FontFamily};
 use font_kit::{
@@ -133,4 +133,24 @@ pub fn get_formatted_icon_path(mime_type: &str, size: i32) -> String {
 pub fn get_desc_from_mime_type(mime_type: &str) -> String {
     let desc = gio::content_type_get_description(mime_type);
     desc.to_string()
+}
+
+pub fn copy_file_uri_to_clipboard(path: &str) {
+    let uri = format!("file://{path}").replace("\'", "'\\''");
+
+    let commandline = if std::env::var("WAYLAND_DISPLAY").is_ok() {
+        format!("echo {uri} | wl-copy --type text/uri-list")
+    } else {
+        format!("echo {uri} | xclip -selection clipboard -t text/uri-list")
+    };
+
+    match Command::new("sh").arg("-c").arg(&commandline).status() {
+        Ok(status) if status.success() => {}
+        Ok(status) => {
+            error!("Clipboard copy failed. Command exited with status: {status}");
+        }
+        Err(e) => {
+            error!("Failed to spawn clipboard command: {e}")
+        }
+    }
 }

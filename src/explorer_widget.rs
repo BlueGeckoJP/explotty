@@ -116,6 +116,16 @@ impl ExplorerWidget {
                                     if ui.button("Open").clicked() {
                                         Self::open_file(file, self.current_directory.clone());
                                     }
+                                    if ui.button("Copy").clicked() {
+                                        crate::utils::copy_file_uri_to_clipboard(
+                                            Path::new(
+                                                &self.current_directory.clone().unwrap_or_default(),
+                                            )
+                                            .join(&file.name)
+                                            .to_str()
+                                            .unwrap_or(""),
+                                        );
+                                    }
                                 });
 
                                 StripBuilder::new(ui)

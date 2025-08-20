@@ -1,3 +1,5 @@
+mod color;
+
 use eframe::egui::{self, Color32, FontId, Pos2, Rect, TextFormat, text::LayoutJob};
 
 use crate::{terminal_buffer::TerminalBuffer, terminal_cell::TerminalCell};
@@ -879,7 +881,7 @@ impl TerminalWidget {
                             if let Some(color_index_str) = after_delimiter.split(';').next() {
                                 if let Ok(color_index) = color_index_str.parse::<u8>() {
                                     self.buffer.current_fg_color =
-                                        process_256_color_palette(color_index);
+                                        color::process_256_color_palette(color_index);
                                 }
 
                                 // Remove the color index from the sequence
@@ -931,7 +933,7 @@ impl TerminalWidget {
                             if let Some(color_index_str) = after_delimiter.split(';').next() {
                                 if let Ok(color_index) = color_index_str.parse::<u8>() {
                                     self.buffer.current_bg_color =
-                                        process_256_color_palette(color_index);
+                                        color::process_256_color_palette(color_index);
                                 }
 
                                 // Remove the color index from the sequence
@@ -1036,52 +1038,52 @@ impl TerminalWidget {
                         }
 
                         "90" => {
-                            self.buffer.current_fg_color = to_bright(Color32::BLACK);
+                            self.buffer.current_fg_color = color::to_bright(Color32::BLACK);
                         }
                         "91" => {
-                            self.buffer.current_fg_color = to_bright(Color32::RED);
+                            self.buffer.current_fg_color = color::to_bright(Color32::RED);
                         }
                         "92" => {
-                            self.buffer.current_fg_color = to_bright(Color32::GREEN);
+                            self.buffer.current_fg_color = color::to_bright(Color32::GREEN);
                         }
                         "93" => {
-                            self.buffer.current_fg_color = to_bright(Color32::YELLOW);
+                            self.buffer.current_fg_color = color::to_bright(Color32::YELLOW);
                         }
                         "94" => {
-                            self.buffer.current_fg_color = to_bright(Color32::BLUE);
+                            self.buffer.current_fg_color = color::to_bright(Color32::BLUE);
                         }
                         "95" => {
-                            self.buffer.current_fg_color = to_bright(Color32::MAGENTA);
+                            self.buffer.current_fg_color = color::to_bright(Color32::MAGENTA);
                         }
                         "96" => {
-                            self.buffer.current_fg_color = to_bright(Color32::CYAN);
+                            self.buffer.current_fg_color = color::to_bright(Color32::CYAN);
                         }
                         "97" => {
-                            self.buffer.current_fg_color = to_bright(Color32::WHITE);
+                            self.buffer.current_fg_color = color::to_bright(Color32::WHITE);
                         }
                         "100" => {
-                            self.buffer.current_bg_color = to_bright(Color32::BLACK);
+                            self.buffer.current_bg_color = color::to_bright(Color32::BLACK);
                         }
                         "101" => {
-                            self.buffer.current_bg_color = to_bright(Color32::RED);
+                            self.buffer.current_bg_color = color::to_bright(Color32::RED);
                         }
                         "102" => {
-                            self.buffer.current_bg_color = to_bright(Color32::GREEN);
+                            self.buffer.current_bg_color = color::to_bright(Color32::GREEN);
                         }
                         "103" => {
-                            self.buffer.current_bg_color = to_bright(Color32::YELLOW);
+                            self.buffer.current_bg_color = color::to_bright(Color32::YELLOW);
                         }
                         "104" => {
-                            self.buffer.current_bg_color = to_bright(Color32::BLUE);
+                            self.buffer.current_bg_color = color::to_bright(Color32::BLUE);
                         }
                         "105" => {
-                            self.buffer.current_bg_color = to_bright(Color32::MAGENTA);
+                            self.buffer.current_bg_color = color::to_bright(Color32::MAGENTA);
                         }
                         "106" => {
-                            self.buffer.current_bg_color = to_bright(Color32::CYAN);
+                            self.buffer.current_bg_color = color::to_bright(Color32::CYAN);
                         }
                         "107" => {
-                            self.buffer.current_bg_color = to_bright(Color32::WHITE);
+                            self.buffer.current_bg_color = color::to_bright(Color32::WHITE);
                         }
 
                         "" => {}
@@ -1199,62 +1201,4 @@ impl TerminalWidget {
             }
         }
     }
-}
-
-fn process_256_color_palette(color_index: u8) -> Color32 {
-    if color_index < 16 {
-        // 16 basic colors
-        match color_index {
-            0 => Color32::BLACK,
-            1 => Color32::RED,
-            2 => Color32::GREEN,
-            3 => Color32::YELLOW,
-            4 => Color32::BLUE,
-            5 => Color32::MAGENTA,
-            6 => Color32::CYAN,
-            7 => Color32::WHITE,
-            8 => to_bright(Color32::BLACK),
-            9 => to_bright(Color32::RED),
-            10 => to_bright(Color32::GREEN),
-            11 => to_bright(Color32::YELLOW),
-            12 => to_bright(Color32::BLUE),
-            13 => to_bright(Color32::MAGENTA),
-            14 => to_bright(Color32::CYAN),
-            15 => to_bright(Color32::WHITE),
-            _ => unreachable!(),
-        }
-    } else if (16..232).contains(&color_index) {
-        // 6x6x6 rgb color cube
-        let r_6 = (color_index - 16) / 36;
-        let g_6 = ((color_index - 16) % 36) / 6;
-        let b_6 = (color_index - 16) % 6;
-
-        let rgb: (u8, u8, u8) = [r_6, g_6, b_6]
-            .map(|x| match x {
-                0 => 0,
-                1 => 95,
-                2 => 135,
-                3 => 175,
-                4 => 215,
-                5 => 255,
-                _ => unreachable!(),
-            })
-            .into();
-
-        Color32::from_rgb(rgb.0, rgb.1, rgb.2)
-    } else {
-        // 232..=255
-        // Grayscale colors
-        let gray_value = (color_index - 232) * 10 + 8; // 8, 18, ..., 238
-        Color32::from_gray(gray_value)
-    }
-}
-
-fn to_bright(color: Color32) -> Color32 {
-    let rgb = color.to_array();
-    Color32::from_rgb(
-        (rgb[0] as f32 * 1.2).min(255.0) as u8,
-        (rgb[1] as f32 * 1.2).min(255.0) as u8,
-        (rgb[2] as f32 * 1.2).min(255.0) as u8,
-    )
 }

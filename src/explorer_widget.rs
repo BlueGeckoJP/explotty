@@ -82,15 +82,7 @@ impl ExplorerWidget {
                                 .horizontal(|mut strip| {
                                     let contents = ["Name", "Size", "Type", "Modified"];
                                     for title in contents {
-                                        strip.cell(|ui| {
-                                            ui.allocate_ui_with_layout(
-                                                ui.available_size(),
-                                                egui::Layout::left_to_right(egui::Align::Center),
-                                                |ui| {
-                                                    ui.label(title);
-                                                },
-                                            );
-                                        });
+                                        Self::render_cell(&mut strip, |ui| ui.label(title));
                                     }
                                 });
                         });
@@ -147,26 +139,14 @@ impl ExplorerWidget {
                                     .size(Size::exact(80.0))
                                     .size(Size::exact(120.0))
                                     .horizontal(|mut strip| {
-                                        strip.cell(|ui| {
-                                            egui::ScrollArea::horizontal()
-                                                .auto_shrink([false, false])
-                                                .show(ui, |ui| {
-                                                    ui.allocate_ui_with_layout(
-                                                        ui.available_size(),
-                                                        egui::Layout::left_to_right(
-                                                            egui::Align::Center,
-                                                        ),
-                                                        |ui| {
-                                                            ui.image(&file.icon_path);
-                                                            ui.label(if file.is_hidden {
-                                                                RichText::new(&file.name)
-                                                                    .color(egui::Color32::DARK_GRAY)
-                                                            } else {
-                                                                RichText::new(&file.name)
-                                                            });
-                                                        },
-                                                    );
-                                                });
+                                        Self::render_cell(&mut strip, |ui| {
+                                            ui.image(&file.icon_path);
+                                            ui.label(if file.is_hidden {
+                                                RichText::new(&file.name)
+                                                    .color(egui::Color32::DARK_GRAY)
+                                            } else {
+                                                RichText::new(&file.name)
+                                            });
                                         });
 
                                         let contents = [
@@ -176,27 +156,27 @@ impl ExplorerWidget {
                                         ];
 
                                         for content in contents {
-                                            strip.cell(|ui| {
-                                                egui::ScrollArea::horizontal()
-                                                    .auto_shrink([false, false])
-                                                    .show(ui, |ui| {
-                                                        ui.allocate_ui_with_layout(
-                                                            ui.available_size(),
-                                                            egui::Layout::left_to_right(
-                                                                egui::Align::Center,
-                                                            ),
-                                                            |ui| {
-                                                                ui.label(content);
-                                                            },
-                                                        );
-                                                    });
-                                            });
+                                            Self::render_cell(&mut strip, |ui| ui.label(content));
                                         }
                                     });
                             })
                         }
                     });
             });
+    }
+
+    fn render_cell<R>(strip: &mut egui_extras::Strip<'_, '_>, f: impl FnOnce(&mut egui::Ui) -> R) {
+        strip.cell(|ui| {
+            egui::ScrollArea::horizontal()
+                .auto_shrink([false, false])
+                .show(ui, |ui| {
+                    ui.allocate_ui_with_layout(
+                        ui.available_size(),
+                        egui::Layout::left_to_right(egui::Align::Center),
+                        f,
+                    );
+                });
+        })
     }
 
     fn open_file(file: &FileItem, current_directory: Option<PathBuf>) {

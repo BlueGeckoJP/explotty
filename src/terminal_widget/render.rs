@@ -25,6 +25,23 @@ impl TerminalWidget {
                     );
                 }
 
+                // Draw debug outline if debug-outline feature is enabled
+                #[cfg(feature = "debug-outline")]
+                {
+                    use egui::Stroke;
+
+                    ui.painter().rect(
+                        Rect {
+                            min: pos,
+                            max: pos + egui::vec2(self.char_width, self.line_height),
+                        },
+                        0,
+                        Color32::TRANSPARENT,
+                        Stroke::new(1.0, Color32::RED),
+                        egui::StrokeKind::Middle,
+                    );
+                }
+
                 // Draw character
                 if cell.character != ' ' {
                     let mut color = cell.fg_color;
@@ -38,46 +55,20 @@ impl TerminalWidget {
                         );
                     }
 
-                    if !cell.italic {
-                        ui.painter().text(
-                            pos,
-                            egui::Align2::LEFT_TOP,
-                            cell.character,
+                    let mut job = LayoutJob::default();
+                    job.append(
+                        &cell.character.to_string(),
+                        0.0,
+                        TextFormat {
                             font_id,
+                            italics: cell.italic,
                             color,
-                        );
+                            ..Default::default()
+                        },
+                    );
 
-                        #[cfg(feature = "debug-outline")]
-                        {
-                            use egui::Stroke;
-
-                            ui.painter().rect(
-                                Rect {
-                                    min: pos,
-                                    max: pos + egui::vec2(self.char_width, self.line_height),
-                                },
-                                0,
-                                Color32::TRANSPARENT,
-                                Stroke::new(1.0, Color32::RED),
-                                egui::StrokeKind::Middle,
-                            );
-                        }
-                    } else {
-                        let mut job = LayoutJob::default();
-                        job.append(
-                            &cell.character.to_string(),
-                            0.0,
-                            TextFormat {
-                                font_id,
-                                italics: true,
-                                color,
-                                ..Default::default()
-                            },
-                        );
-
-                        let galley = ui.painter().layout_job(job);
-                        ui.painter().galley(Pos2::new(pos.x, pos.y), galley, color);
-                    }
+                    let galley = ui.painter().layout_job(job);
+                    ui.painter().galley(Pos2::new(pos.x, pos.y), galley, color);
 
                     if cell.underline {
                         let underline_y = pos.y + self.line_height - 2.0;

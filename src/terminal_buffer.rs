@@ -1,6 +1,7 @@
 use std::vec;
 
 use eframe::egui::Color32;
+use unicode_width::UnicodeWidthChar;
 
 use crate::terminal_cell::TerminalCell;
 
@@ -46,6 +47,18 @@ impl TerminalBuffer {
         }
     }
 
+    pub fn make_cell(&self, ch: char) -> TerminalCell {
+        TerminalCell {
+            character: ch,
+            fg_color: self.current_fg_color,
+            bg_color: self.current_bg_color,
+            bold: self.current_bold,
+            underline: self.current_underline,
+            italic: self.current_italic,
+            wide_tail: false,
+        }
+    }
+
     pub fn resize(&mut self, new_width: usize, new_height: usize) {
         self.width = new_width;
         self.height = new_height;
@@ -75,17 +88,27 @@ impl TerminalBuffer {
     }
 
     pub fn put_char(&mut self, ch: char) {
+        let display_width = UnicodeWidthChar::width(ch).unwrap_or(1);
+        if display_width == 0 {
+            // Skip zero-width characters
+            return;
+        }
+
         // Insert the character at the current cursor position
         if self.cursor_y < self.height {
-            self.cells[self.cursor_y][self.cursor_x] = TerminalCell {
-                character: ch,
-                fg_color: self.current_fg_color,
-                bg_color: self.current_bg_color,
-                bold: self.current_bold,
-                underline: self.current_underline,
-                italic: self.current_italic,
-            };
-            self.cursor_x = (self.cursor_x + 1).min(self.width.saturating_sub(1));
+            let next_cursor_x = (self.cursor_x + 1).min(self.width.saturating_sub(1));
+            if display_width > 1 {
+                self.cells[self.cursor_y][self.cursor_x] = self.make_cell(ch);
+                self.cells[self.cursor_y][next_cursor_x] = {
+                    let mut cell = self.make_cell(ch);
+                    cell.wide_tail = true;
+                    cell
+                };
+                self.cursor_x = (self.cursor_x + 2).min(self.width.saturating_sub(1));
+            } else {
+                self.cells[self.cursor_y][self.cursor_x] = self.make_cell(ch);
+                self.cursor_x = next_cursor_x;
+            }
         }
     }
 

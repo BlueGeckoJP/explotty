@@ -43,7 +43,7 @@ impl TerminalWidget {
                 }
 
                 // Draw character
-                if cell.character != ' ' {
+                if cell.character != ' ' && !cell.wide_tail {
                     let mut color = cell.fg_color;
                     let font_id = FontId::monospace(self.font_size);
 

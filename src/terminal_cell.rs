@@ -8,6 +8,7 @@ pub struct TerminalCell {
     pub bold: bool,
     pub underline: bool,
     pub italic: bool,
+    pub wide_tail: bool,
 }
 
 impl Default for TerminalCell {
@@ -19,6 +20,7 @@ impl Default for TerminalCell {
             bold: false,
             underline: false,
             italic: false,
+            wide_tail: false,
         }
     }
 }

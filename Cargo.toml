@@ -17,6 +17,7 @@ gio = "0.21.0"
 gtk = "0.18.2"
 serde = { version = "1.0.219", features = ["derive"] }
 toml = "0.9.2"
+unicode-width = "0.2.1"
 
 [features]
 debug-outline = []

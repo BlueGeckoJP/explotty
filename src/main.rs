@@ -16,7 +16,7 @@ use crate::app::App;
 static CONFIG: OnceLock<Arc<config::Config>> = OnceLock::new();
 
 fn main() -> eframe::Result {
-    env_logger::init();
+    env_logger::init_from_env(env_logger::Env::default().default_filter_or("info"));
 
     if gtk::init().is_err() {
         eprintln!("Failed to initialize GTK");

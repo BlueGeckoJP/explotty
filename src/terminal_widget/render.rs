@@ -25,25 +25,25 @@ impl TerminalWidget {
                     );
                 }
 
-                // Draw debug outline if debug-outline feature is enabled
-                #[cfg(feature = "debug-outline")]
-                {
-                    use egui::Stroke;
-
-                    ui.painter().rect(
-                        Rect {
-                            min: pos,
-                            max: pos + egui::vec2(self.char_width, self.line_height),
-                        },
-                        0,
-                        Color32::TRANSPARENT,
-                        Stroke::new(1.0, Color32::RED),
-                        egui::StrokeKind::Middle,
-                    );
-                }
-
                 // Draw character
                 if cell.character != ' ' && !cell.wide_tail {
+                    // Draw debug outline if debug-outline feature is enabled
+                    #[cfg(feature = "debug-outline")]
+                    {
+                        use egui::Stroke;
+
+                        ui.painter().rect(
+                            Rect {
+                                min: pos,
+                                max: pos + egui::vec2(self.char_width, self.line_height),
+                            },
+                            0,
+                            Color32::TRANSPARENT,
+                            Stroke::new(1.0, Color32::RED),
+                            egui::StrokeKind::Middle,
+                        );
+                    }
+
                     let mut color = cell.fg_color;
                     let font_id = FontId::monospace(self.font_size);
 

@@ -39,6 +39,15 @@ pub fn load_system_font(ctx: &Context) -> anyhow::Result<()> {
         (FamilyName::SansSerif, FamilyName::Monospace)
     };
 
+    let terminal_fallback_fonts = if let Some(config) = CONFIG.get() {
+        config
+            .terminal_fallback_font_families
+            .clone()
+            .unwrap_or_default()
+    } else {
+        Vec::new()
+    };
+
     let sans_serif_handle =
         SystemSource::new().select_best_match(&[sans_serif_family], &Properties::new())?;
     let sans_serif_buf: Vec<u8> = match sans_serif_handle {
@@ -53,6 +62,18 @@ pub fn load_system_font(ctx: &Context) -> anyhow::Result<()> {
         Handle::Path { path, .. } => std::fs::read(path)?,
     };
 
+    let terminal_fallback_buffers = terminal_fallback_fonts
+        .iter()
+        .map(|family| {
+            let handle = SystemSource::new()
+                .select_best_match(&[FamilyName::Title(family.clone())], &Properties::new())?;
+            match handle {
+                Handle::Memory { bytes, .. } => Ok(bytes.to_vec()),
+                Handle::Path { path, .. } => Ok(std::fs::read(path)?),
+            }
+        })
+        .collect::<anyhow::Result<Vec<_>>>()?;
+
     const SANS_SERIF_FONT_ID: &str = "System Sans Serif";
     const MONOSPACE_FONT_ID: &str = "System Monospace";
 
@@ -64,12 +85,27 @@ pub fn load_system_font(ctx: &Context) -> anyhow::Result<()> {
         MONOSPACE_FONT_ID.to_string(),
         FontData::from_owned(monospace_buf).into(),
     );
+    fonts.font_data.extend(
+        terminal_fallback_buffers
+            .into_iter()
+            .enumerate()
+            .map(|(i, buf)| {
+                (
+                    terminal_fallback_fonts[i].clone(),
+                    FontData::from_owned(buf).into(),
+                )
+            }),
+    );
 
     if let Some(vec) = fonts.families.get_mut(&FontFamily::Proportional) {
         vec.insert(0, SANS_SERIF_FONT_ID.to_string());
+        info!("Proportional font family: {vec:?}");
     }
     if let Some(vec) = fonts.families.get_mut(&FontFamily::Monospace) {
-        vec.insert(0, MONOSPACE_FONT_ID.to_string());
+        let mut fonts = vec![MONOSPACE_FONT_ID.to_string()];
+        fonts.extend(terminal_fallback_fonts.iter().cloned());
+        vec.splice(0..0, fonts);
+        info!("Monospace font family: {vec:?}");
     }
 
     ctx.set_fonts(fonts);

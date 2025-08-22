@@ -7,6 +7,7 @@ use serde::Deserialize;
 pub struct Config {
     pub ui_font_family: Option<String>,
     pub terminal_font_family: Option<String>,
+    pub terminal_fallback_font_families: Option<Vec<String>>,
 }
 
 impl Config {

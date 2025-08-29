@@ -516,15 +516,6 @@ impl TerminalWidget {
                 self.show_cursor = false;
             }
 
-            // CSI ? 1 h (DECCKM)
-            ch if ch.ends_with('h') && sequence.contains("1") => {
-                self.decckm_mode = true;
-            }
-            // CSI ? 1 l (Reset DECCKM)
-            ch if ch.ends_with('l') && sequence.contains("1") => {
-                self.decckm_mode = false;
-            }
-
             // Other CSI sequences
             _ => {
                 warn!("Unhandled CSI sequence: {sequence}");

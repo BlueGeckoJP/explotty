@@ -14,6 +14,16 @@ impl TerminalWidget {
                 self.new_line_mode = false;
                 true
             }
+            // setappl DECCKM / Set cursor key to application
+            ch if ch.ends_with('h') && sequence.contains("1") => {
+                self.decckm_mode = true;
+                true
+            }
+            // setcursor DECCKM / Set cursor key to cursor
+            ch if ch.ends_with('l') && sequence.contains("1") => {
+                self.decckm_mode = false;
+                true
+            }
             _ => false,
         }
     }

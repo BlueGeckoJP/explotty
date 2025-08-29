@@ -112,8 +112,10 @@ impl TerminalBuffer {
         }
     }
 
-    pub fn new_line(&mut self) {
-        self.cursor_x = 0;
+    pub fn new_line(&mut self, lmn_mode: bool) {
+        if lmn_mode {
+            self.cursor_x = 0;
+        }
         self.cursor_y += 1;
         if self.cursor_y > self.scroll_region_bottom {
             self.scroll_up();

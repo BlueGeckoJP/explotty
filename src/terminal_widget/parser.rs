@@ -22,7 +22,7 @@ impl TerminalWidget {
                         let top_line = self.buffer.cells[0].clone();
                         self.add_line_to_scrollback(top_line);
                     }
-                    self.buffer.new_line();
+                    self.buffer.new_line(self.new_line_mode);
                     cursor += 1;
                 }
                 b'\t' => {

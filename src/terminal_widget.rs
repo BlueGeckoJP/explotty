@@ -3,6 +3,7 @@ mod input;
 mod parser;
 mod parser_csi;
 mod parser_osc;
+mod parser_vt100;
 mod render;
 
 use eframe::egui::{self, Color32};
@@ -25,6 +26,7 @@ pub struct TerminalWidget {
     scroll_offset: usize,
     max_scroll_lines: usize,
     scrollback_buffer: Vec<Vec<TerminalCell>>,
+    new_line_mode: bool,
 }
 
 impl TerminalWidget {
@@ -45,6 +47,7 @@ impl TerminalWidget {
             scroll_offset: 0,
             max_scroll_lines: 1000,
             scrollback_buffer: Vec::new(),
+            new_line_mode: true,
         }
     }
 

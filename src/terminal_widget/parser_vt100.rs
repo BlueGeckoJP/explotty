@@ -15,12 +15,12 @@ impl TerminalWidget {
                 true
             }
             // setappl DECCKM / Set cursor key to application
-            ch if ch.ends_with('h') && sequence.contains("1") => {
+            ch if ch.ends_with("1h") => {
                 self.decckm_mode = true;
                 true
             }
             // setcursor DECCKM / Set cursor key to cursor
-            ch if ch.ends_with('l') && sequence.contains("1") => {
+            ch if ch.ends_with("1l")=> {
                 self.decckm_mode = false;
                 true
             }

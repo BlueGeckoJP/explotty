@@ -22,7 +22,11 @@ pub struct TerminalWidget {
     bracket_paste_mode: bool,
     // Storage location for current screen information used when Alternative Screen Buffer is used
     saved_screen_buffer: Option<TerminalBuffer>,
-    decckm_mode: bool, // DECCKM - DEC Private Mode
+    // DEC Private Mode states
+    decckm_mode: bool,    // DECCKM - Cursor Key Application Mode (?1h/l)
+    decom_mode: bool,     // DECOM - Origin Mode (?6h/l)
+    decawm_mode: bool,    // DECAWM - Auto Wrap Mode (?7h/l)
+    reverse_video_mode: bool, // DECSCNM - Screen Reverse Video (?5h/l)
     scroll_offset: usize,
     max_scroll_lines: usize,
     scrollback_buffer: Vec<Vec<TerminalCell>>,
@@ -43,7 +47,11 @@ impl TerminalWidget {
             selection_end: None,
             bracket_paste_mode: false,
             saved_screen_buffer: None,
-            decckm_mode: false,
+            // Initialize DEC Private Mode states to their default values
+            decckm_mode: false,      // Cursor key normal mode
+            decom_mode: false,       // Absolute origin mode
+            decawm_mode: true,       // Auto wrap mode enabled by default
+            reverse_video_mode: false, // Normal video mode
             scroll_offset: 0,
             max_scroll_lines: 1000,
             scrollback_buffer: Vec::new(),

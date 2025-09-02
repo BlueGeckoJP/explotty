@@ -477,45 +477,6 @@ impl TerminalWidget {
                     .move_cursor(self.buffer.cursor_x, row.saturating_sub(1));
             }
 
-            // CSI ? 2004 h (Enable Bracketed Paste Mode)
-            ch if ch.ends_with('h') && sequence.contains("2004") => {
-                self.bracket_paste_mode = true;
-            }
-            // CSI ? 2004 l (Disable Bracketed Paste Mode)
-            ch if ch.ends_with('l') && sequence.contains("2004") => {
-                self.bracket_paste_mode = false;
-            }
-
-            // CSI ? 1049 h (Enable Alternate Screen Buffer)
-            ch if ch.ends_with('h') && sequence.contains("1049") => {
-                // Switch to alternate screen buffer
-                let new_buffer = TerminalBuffer::new(self.buffer.width, self.buffer.height);
-                self.saved_screen_buffer = Some(std::mem::replace(&mut self.buffer, new_buffer));
-                self.buffer.cursor_x = 0;
-                self.buffer.cursor_y = 0;
-            }
-
-            // CSI ? 1049 l (Disable Alternate Screen Buffer)
-            ch if ch.ends_with('l') && sequence.contains("1049") => {
-                // Switch back to main screen buffer
-                if let Some(saved_buffer) = self.saved_screen_buffer.take() {
-                    self.buffer = saved_buffer;
-                } else {
-                    warn!("No saved screen buffer to switch back to");
-                }
-                self.saved_screen_buffer = None;
-            }
-
-            // CSI ? 25 h (Show Cursor)
-            ch if ch.ends_with('h') && sequence.contains("25") => {
-                self.show_cursor = true;
-            }
-
-            // CSI ? 25 l (Hide Cursor)
-            ch if ch.ends_with('l') && sequence.contains("25") => {
-                self.show_cursor = false;
-            }
-
             // Other CSI sequences
             _ => {
                 warn!("Unhandled CSI sequence: {sequence}");

@@ -1,3 +1,30 @@
+// VT100/DEC Private Mode Parser
+//
+// This module handles VT100 and DEC Private Mode escape sequences, which have the format:
+// CSI ? Pn h/l  (where CSI is typically "\x1b[")
+//
+// Supported DEC Private Mode Parameters:
+// ┌────────┬─────────────────────────────────────┬─────────────────────────────────────┐
+// │ Param  │ Name                                │ Description                         │ 
+// ├────────┼─────────────────────────────────────┼─────────────────────────────────────┤
+// │ ?1h/l  │ DECCKM (Cursor Key Application)     │ Application/Normal cursor key mode  │
+// │ ?5h/l  │ DECSCNM (Screen Reverse Video)      │ Reverse/Normal video mode           │
+// │ ?6h/l  │ DECOM (Origin Mode)                 │ Relative/Absolute cursor addressing │
+// │ ?7h/l  │ DECAWM (Auto Wrap Mode)             │ Enable/Disable automatic line wrap │
+// │ ?20h/l │ LNM (New Line Mode)                 │ New line/Line feed mode             │
+// │ ?25h/l │ DECTCEM (Text Cursor Enable)        │ Show/Hide cursor                    │
+// │ ?1049h/l│ Alternate Screen Buffer            │ Switch to/from alternate screen     │
+// │ ?2004h/l│ Bracketed Paste Mode               │ Enable/Disable bracketed paste     │
+// └────────┴─────────────────────────────────────┴─────────────────────────────────────┘
+//
+// The 'h' suffix sets (enables) the mode, 'l' suffix resets (disables) the mode.
+// Multiple parameters can be specified with semicolon separation: ?1;25h
+//
+// References:
+// - https://invisible-island.net/xterm/ctlseqs/ctlseqs.html
+// - https://vt100.net/docs/vt100-ug/chapter3.html
+// - https://espterm.github.io/docs/VT100%20escape%20codes.html
+
 use crate::terminal_widget::TerminalWidget;
 use crate::terminal_buffer::TerminalBuffer;
 

@@ -9,7 +9,7 @@ use crate::{
 impl TerminalWidget {
     pub fn process_csi_sequence(&mut self, sequence: &str) {
         debug!("Processing CSI sequence: {sequence}");
-        
+
         if self.process_vt100(sequence) {
             return;
         }

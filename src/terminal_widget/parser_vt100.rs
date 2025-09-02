@@ -20,7 +20,7 @@ impl TerminalWidget {
                 true
             }
             // setcursor DECCKM / Set cursor key to cursor
-            ch if ch.ends_with("1l")=> {
+            ch if ch.ends_with("1l") => {
                 self.decckm_mode = false;
                 true
             }

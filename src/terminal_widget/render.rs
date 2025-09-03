@@ -1,4 +1,5 @@
 use eframe::egui::{self, Color32, FontId, Pos2, Rect, TextFormat, text::LayoutJob};
+use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::terminal_widget::TerminalWidget;
 
@@ -27,58 +28,90 @@ impl TerminalWidget {
 
                 // Draw character
                 if cell.character != ' ' && !cell.wide_tail {
-                    // Draw debug outline if debug-outline feature is enabled
-                    #[cfg(feature = "debug-outline")]
-                    {
-                        use egui::Stroke;
+                    // Skip rendering hidden text
+                    if cell.hidden {
+                        continue;
+                    }
 
-                        ui.painter().rect(
-                            Rect {
-                                min: pos,
-                                max: pos + egui::vec2(self.char_width, self.line_height),
+                    // Handle blinking - show/hide based on time
+                    let should_show_blink = if cell.blink {
+                        // Blink every 500ms (2Hz)
+                        let current_time = SystemTime::now()
+                            .duration_since(UNIX_EPOCH)
+                            .unwrap_or_default()
+                            .as_millis();
+                        (current_time / 500) % 2 == 0
+                    } else {
+                        true
+                    };
+
+                    if should_show_blink {
+                        // Draw debug outline if debug-outline feature is enabled
+                        #[cfg(feature = "debug-outline")]
+                        {
+                            use egui::Stroke;
+
+                            ui.painter().rect(
+                                Rect {
+                                    min: pos,
+                                    max: pos + egui::vec2(self.char_width, self.line_height),
+                                },
+                                0,
+                                Color32::TRANSPARENT,
+                                Stroke::new(1.0, Color32::RED),
+                                egui::StrokeKind::Middle,
+                            );
+                        }
+
+                        let mut color = cell.fg_color;
+                        let font_id = FontId::monospace(self.font_size);
+
+                        if cell.bold {
+                            color = Color32::from_rgb(
+                                (color.r() as u16 * 3 / 2).min(255) as u8,
+                                (color.g() as u16 * 3 / 2).min(255) as u8,
+                                (color.b() as u16 * 3 / 2).min(255) as u8,
+                            );
+                        }
+
+                        let mut job = LayoutJob::default();
+                        job.append(
+                            &cell.character.to_string(),
+                            0.0,
+                            TextFormat {
+                                font_id,
+                                italics: cell.italic,
+                                color,
+                                ..Default::default()
                             },
-                            0,
-                            Color32::TRANSPARENT,
-                            Stroke::new(1.0, Color32::RED),
-                            egui::StrokeKind::Middle,
                         );
-                    }
 
-                    let mut color = cell.fg_color;
-                    let font_id = FontId::monospace(self.font_size);
+                        let galley = ui.painter().layout_job(job);
+                        ui.painter().galley(Pos2::new(pos.x, pos.y), galley, color);
 
-                    if cell.bold {
-                        color = Color32::from_rgb(
-                            (color.r() as u16 * 3 / 2).min(255) as u8,
-                            (color.g() as u16 * 3 / 2).min(255) as u8,
-                            (color.b() as u16 * 3 / 2).min(255) as u8,
-                        );
-                    }
+                        // Draw underline
+                        if cell.underline {
+                            let underline_y = pos.y + self.line_height - 2.0;
+                            ui.painter().line_segment(
+                                [
+                                    Pos2::new(pos.x, underline_y),
+                                    Pos2::new(pos.x + self.char_width, underline_y),
+                                ],
+                                egui::Stroke::new(1.0, color),
+                            );
+                        }
 
-                    let mut job = LayoutJob::default();
-                    job.append(
-                        &cell.character.to_string(),
-                        0.0,
-                        TextFormat {
-                            font_id,
-                            italics: cell.italic,
-                            color,
-                            ..Default::default()
-                        },
-                    );
-
-                    let galley = ui.painter().layout_job(job);
-                    ui.painter().galley(Pos2::new(pos.x, pos.y), galley, color);
-
-                    if cell.underline {
-                        let underline_y = pos.y + self.line_height - 2.0;
-                        ui.painter().line_segment(
-                            [
-                                Pos2::new(pos.x, underline_y),
-                                Pos2::new(pos.x + self.char_width, underline_y),
-                            ],
-                            egui::Stroke::new(1.0, color),
-                        );
+                        // Draw strikethrough
+                        if cell.strikethrough {
+                            let strikethrough_y = pos.y + self.line_height / 2.0;
+                            ui.painter().line_segment(
+                                [
+                                    Pos2::new(pos.x, strikethrough_y),
+                                    Pos2::new(pos.x + self.char_width, strikethrough_y),
+                                ],
+                                egui::Stroke::new(1.0, color),
+                            );
+                        }
                     }
                 }
             }

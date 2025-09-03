@@ -40,7 +40,7 @@ impl TerminalWidget {
                             .duration_since(UNIX_EPOCH)
                             .unwrap_or_default()
                             .as_millis();
-                        (current_time / 500) % 2 == 0
+                        (current_time / 500).is_multiple_of(2)
                     } else {
                         true
                     };

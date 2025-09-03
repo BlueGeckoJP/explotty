@@ -104,10 +104,22 @@ impl TerminalWidget {
                         // Draw strikethrough
                         if cell.strikethrough {
                             let strikethrough_y = pos.y + self.line_height / 2.0;
+
+                            // Check if this is a wide character (first cell of a double-width character)
+                            let is_wide_char = !cell.wide_tail
+                                && col_index + 1 < row.len()
+                                && row[col_index + 1].wide_tail;
+
+                            let strikethrough_width = if is_wide_char {
+                                self.char_width * 2.0 // Cover both cells for wide characters
+                            } else {
+                                self.char_width // Cover one cell for normal characters
+                            };
+
                             ui.painter().line_segment(
                                 [
                                     Pos2::new(pos.x, strikethrough_y),
-                                    Pos2::new(pos.x + self.char_width, strikethrough_y),
+                                    Pos2::new(pos.x + strikethrough_width, strikethrough_y),
                                 ],
                                 egui::Stroke::new(1.0, color),
                             );

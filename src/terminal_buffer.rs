@@ -18,6 +18,9 @@ pub struct TerminalBuffer {
     pub current_bold: bool,
     pub current_underline: bool,
     pub current_italic: bool,
+    pub current_blink: bool,
+    pub current_strikethrough: bool,
+    pub current_hidden: bool,
     pub saved_cursor_x: usize,
     pub saved_cursor_y: usize,
 }
@@ -42,6 +45,9 @@ impl TerminalBuffer {
             current_bold: false,
             current_underline: false,
             current_italic: false,
+            current_blink: false,
+            current_strikethrough: false,
+            current_hidden: false,
             saved_cursor_x: 0,
             saved_cursor_y: 0,
         }
@@ -55,6 +61,9 @@ impl TerminalBuffer {
             bold: self.current_bold,
             underline: self.current_underline,
             italic: self.current_italic,
+            blink: self.current_blink,
+            strikethrough: self.current_strikethrough,
+            hidden: self.current_hidden,
             wide_tail: false,
         }
     }

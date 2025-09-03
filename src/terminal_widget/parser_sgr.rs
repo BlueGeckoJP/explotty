@@ -46,10 +46,10 @@ impl TerminalWidget {
                 "3" => self.buffer.current_italic = true,
                 // Underline
                 "4" => self.buffer.current_underline = true,
-                // Blink (ignored for now)
-                "5" => { /* TODO: implement blink visual effect */ }
-                // Rapid Blink (ignored)
-                "6" => { /* TODO: implement rapid blink */ }
+                // Blink
+                "5" => self.buffer.current_blink = true,
+                // Rapid Blink (treated same as regular blink)
+                "6" => self.buffer.current_blink = true,
                 // Reverse video
                 "7" => {
                     std::mem::swap(
@@ -57,30 +57,43 @@ impl TerminalWidget {
                         &mut self.buffer.current_bg_color,
                     );
                 }
-                // Conceal / Hidden (not rendered, we can approximate by making fg=bg)
+                // Conceal / Hidden (proper flag-based implementation)
                 "8" => {
-                    self.buffer.current_fg_color = self.buffer.current_bg_color;
+                    self.buffer.current_hidden = true;
                 }
-                // Strikethrough (not stored yet; TODO add style flag)
-                "9" => { /* TODO: add strikethrough support */ }
+                // Strikethrough
+                "9" => self.buffer.current_strikethrough = true,
                 // Primary font / Alternative font selections (10-19) ignored
                 "10" | "11" | "12" | "13" | "14" | "15" | "16" | "17" | "18" | "19" => {}
                 // Fraktur (20) ignored
                 "20" => {}
                 // Disable Bold/Faint
-                "22" => self.buffer.current_bold = false, // faint also cleared
+                "22" => {
+                    self.buffer.current_bold = false;
+                    // Note: faint is handled as darkened fg color, so we need to reset to original
+                    // For now, we'll just clear bold. Proper faint handling would need color state stack.
+                }
                 // Disable Italic
                 "23" => self.buffer.current_italic = false,
                 // Disable Underline
                 "24" => self.buffer.current_underline = false,
                 // Disable Blink
-                "25" => { /* ignore */ }
+                "25" => self.buffer.current_blink = false,
                 // Disable Reverse
-                "27" => { /* we cannot restore original easily; ignoring */ }
+                "27" => {
+                    // Note: Current reverse implementation swaps colors, but we cannot easily restore
+                    // the original colors without maintaining a color state stack.
+                    // This is a known limitation mentioned in the issue.
+                    // For now, we swap again to reverse the effect (may not be perfectly accurate)
+                    std::mem::swap(
+                        &mut self.buffer.current_fg_color,
+                        &mut self.buffer.current_bg_color,
+                    );
+                }
                 // Reveal (disable hidden)
-                "28" => { /* ignore */ }
+                "28" => self.buffer.current_hidden = false,
                 // Disable Strikethrough
-                "29" => { /* ignore until implemented */ }
+                "29" => self.buffer.current_strikethrough = false,
 
                 // Foreground basic colors 30-37
                 "30" => self.buffer.current_fg_color = Color32::BLACK,
@@ -186,5 +199,8 @@ impl TerminalWidget {
         self.buffer.current_bold = false;
         self.buffer.current_underline = false;
         self.buffer.current_italic = false;
+        self.buffer.current_blink = false;
+        self.buffer.current_strikethrough = false;
+        self.buffer.current_hidden = false;
     }
 }

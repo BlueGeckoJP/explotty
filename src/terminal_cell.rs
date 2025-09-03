@@ -8,6 +8,9 @@ pub struct TerminalCell {
     pub bold: bool,
     pub underline: bool,
     pub italic: bool,
+    pub blink: bool,
+    pub strikethrough: bool,
+    pub hidden: bool,
     pub wide_tail: bool,
 }
 
@@ -20,6 +23,9 @@ impl Default for TerminalCell {
             bold: false,
             underline: false,
             italic: false,
+            blink: false,
+            strikethrough: false,
+            hidden: false,
             wide_tail: false,
         }
     }

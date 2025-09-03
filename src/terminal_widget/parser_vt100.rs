@@ -5,7 +5,7 @@
 //
 // Supported DEC Private Mode Parameters:
 // ┌────────┬─────────────────────────────────────┬─────────────────────────────────────┐
-// │ Param  │ Name                                │ Description                         │ 
+// │ Param  │ Name                                │ Description                         │
 // ├────────┼─────────────────────────────────────┼─────────────────────────────────────┤
 // │ ?1h/l  │ DECCKM (Cursor Key Application)     │ Application/Normal cursor key mode  │
 // │ ?5h/l  │ DECSCNM (Screen Reverse Video)      │ Reverse/Normal video mode           │
@@ -25,8 +25,8 @@
 // - https://vt100.net/docs/vt100-ug/chapter3.html
 // - https://espterm.github.io/docs/VT100%20escape%20codes.html
 
-use crate::terminal_widget::TerminalWidget;
 use crate::terminal_buffer::TerminalBuffer;
+use crate::terminal_widget::TerminalWidget;
 
 impl TerminalWidget {
     /// Parse DEC Private Mode sequences (CSI ? Pn h/l format)
@@ -36,7 +36,7 @@ impl TerminalWidget {
         if !sequence.starts_with('?') {
             return None;
         }
-        
+
         let (params_str, is_set) = if sequence.ends_with('h') {
             (sequence.strip_prefix('?')?.strip_suffix('h')?, true)
         } else if sequence.ends_with('l') {
@@ -44,7 +44,7 @@ impl TerminalWidget {
         } else {
             return None;
         };
-        
+
         // Parse parameter numbers (can be semicolon-separated)
         let mut params = Vec::new();
         for param_str in params_str.split(';') {
@@ -55,7 +55,7 @@ impl TerminalWidget {
                 return None;
             }
         }
-        
+
         if params.is_empty() {
             None
         } else {
@@ -83,7 +83,7 @@ impl TerminalWidget {
 
     /// Process VT100/DEC Private Mode sequences
     /// Extended implementation supporting all major DEC Private Mode sequences
-    /// 
+    ///
     /// Supported sequences:
     /// - ?1h/l   (DECCKM: Cursor Key Application Mode)
     /// - ?5h/l   (DECSCNM: Screen Reverse Video)
@@ -100,38 +100,42 @@ impl TerminalWidget {
                     1 => {
                         // DECCKM - Cursor Key Application Mode
                         self.decckm_mode = is_set;
-                        debug!("DECCKM mode set to: {}", is_set);
+                        debug!("DECCKM mode set to: {is_set}");
                     }
                     5 => {
                         // DECSCNM - Screen Reverse Video Mode
                         self.reverse_video_mode = is_set;
                         if is_set {
-                            warn!("DECSCNM (Screen Reverse Video) enabled but rendering not implemented");
+                            warn!(
+                                "DECSCNM (Screen Reverse Video) enabled but rendering not implemented"
+                            );
                         }
-                        debug!("DECSCNM mode set to: {}", is_set);
+                        debug!("DECSCNM mode set to: {is_set}");
                     }
                     6 => {
                         // DECOM - Origin Mode
                         self.decom_mode = is_set;
                         if is_set {
-                            warn!("DECOM (Origin Mode) enabled but margin-relative positioning not fully implemented");
+                            warn!(
+                                "DECOM (Origin Mode) enabled but margin-relative positioning not fully implemented"
+                            );
                         }
-                        debug!("DECOM mode set to: {}", is_set);
+                        debug!("DECOM mode set to: {is_set}");
                     }
                     7 => {
                         // DECAWM - Auto Wrap Mode
                         self.decawm_mode = is_set;
-                        debug!("DECAWM mode set to: {}", is_set);
+                        debug!("DECAWM mode set to: {is_set}");
                     }
                     20 => {
                         // LNM - New Line Mode
                         self.new_line_mode = is_set;
-                        debug!("New Line Mode set to: {}", is_set);
+                        debug!("New Line Mode set to: {is_set}");
                     }
                     25 => {
                         // DECTCEM - Cursor Show/Hide
                         self.show_cursor = is_set;
-                        debug!("Cursor visibility set to: {}", is_set);
+                        debug!("Cursor visibility set to: {is_set}");
                     }
                     1049 => {
                         // Alternate Screen Buffer
@@ -146,10 +150,14 @@ impl TerminalWidget {
                     2004 => {
                         // Bracketed Paste Mode
                         self.bracket_paste_mode = is_set;
-                        debug!("Bracketed paste mode set to: {}", is_set);
+                        debug!("Bracketed paste mode set to: {is_set}");
                     }
                     _ => {
-                        warn!("Unsupported DEC Private Mode parameter: ?{}{}", param, if is_set { 'h' } else { 'l' });
+                        warn!(
+                            "Unsupported DEC Private Mode parameter: ?{}{}",
+                            param,
+                            if is_set { 'h' } else { 'l' }
+                        );
                         return false;
                     }
                 }

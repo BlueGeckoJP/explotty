@@ -3,6 +3,7 @@ mod input;
 mod parser;
 mod parser_csi;
 mod parser_osc;
+mod parser_sgr; // newly added SGR parser module
 mod parser_vt100;
 mod render;
 
@@ -23,9 +24,9 @@ pub struct TerminalWidget {
     // Storage location for current screen information used when Alternative Screen Buffer is used
     saved_screen_buffer: Option<TerminalBuffer>,
     // DEC Private Mode states
-    decckm_mode: bool,    // DECCKM - Cursor Key Application Mode (?1h/l)
-    decom_mode: bool,     // DECOM - Origin Mode (?6h/l)
-    decawm_mode: bool,    // DECAWM - Auto Wrap Mode (?7h/l)
+    decckm_mode: bool,        // DECCKM - Cursor Key Application Mode (?1h/l)
+    decom_mode: bool,         // DECOM - Origin Mode (?6h/l)
+    decawm_mode: bool,        // DECAWM - Auto Wrap Mode (?7h/l)
     reverse_video_mode: bool, // DECSCNM - Screen Reverse Video (?5h/l)
     scroll_offset: usize,
     max_scroll_lines: usize,
@@ -48,9 +49,9 @@ impl TerminalWidget {
             bracket_paste_mode: false,
             saved_screen_buffer: None,
             // Initialize DEC Private Mode states to their default values
-            decckm_mode: false,      // Cursor key normal mode
-            decom_mode: false,       // Absolute origin mode
-            decawm_mode: true,       // Auto wrap mode enabled by default
+            decckm_mode: false,        // Cursor key normal mode
+            decom_mode: false,         // Absolute origin mode
+            decawm_mode: true,         // Auto wrap mode enabled by default
             reverse_video_mode: false, // Normal video mode
             scroll_offset: 0,
             max_scroll_lines: 1000,

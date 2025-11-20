@@ -2,6 +2,7 @@ mod app;
 mod config;
 mod explorer_widget;
 mod logging;
+mod parser;
 mod terminal_buffer;
 mod terminal_cell;
 mod terminal_widget;

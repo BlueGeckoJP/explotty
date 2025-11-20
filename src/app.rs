@@ -7,7 +7,7 @@ use std::{
 use eframe::egui::{self, mutex::Mutex};
 use portable_pty::{Child, CommandBuilder, PtyPair, PtySize, native_pty_system};
 
-use crate::{explorer_widget::ExplorerWidget, terminal_widget::TerminalWidget};
+use crate::{explorer_widget::ExplorerWidget, logging, terminal_widget::TerminalWidget};
 
 pub static INPUT_BUFFER: OnceLock<Arc<Mutex<Vec<u8>>>> = OnceLock::new();
 pub static OUTPUT_BUFFER: OnceLock<Arc<Mutex<Vec<u8>>>> = OnceLock::new();
@@ -152,6 +152,8 @@ impl App {
         };
 
         self.terminal_widget.process_output(ctx, &data);
+
+        logging::log_output_data(&data);
     }
 
     fn send_input_to_pty(&mut self, data: Vec<u8>) {
@@ -159,6 +161,8 @@ impl App {
             let mut input = self.input_buffer.lock();
             input.extend_from_slice(&data);
         }
+
+        logging::log_input_data(&data);
     }
 
     fn resize_pty(&mut self, cols: u16, rows: u16) {

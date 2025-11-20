@@ -2,6 +2,7 @@ mod color;
 mod input;
 mod parser;
 mod parser_csi;
+mod parser_dcs;
 mod parser_osc;
 mod parser_sgr; // newly added SGR parser module
 mod parser_vt100;

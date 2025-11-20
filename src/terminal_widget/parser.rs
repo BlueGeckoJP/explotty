@@ -92,6 +92,15 @@ impl TerminalWidget {
                             self.process_osc_sequence(ctx, s);
                         }
                         cursor += end_of_seq + terminator_len;
+                    } else if remaining_bytes[1] == b'(' {
+                        if remaining_bytes.len() < 2 {
+                            break;
+                        }
+                        let sequence_body = &remaining_bytes[1..3];
+                        if let Ok(s) = std::str::from_utf8(sequence_body) {
+                            self.process_dcs_sequence(s);
+                        }
+                        cursor += 3;
                     } else {
                         cursor += 2;
                     }

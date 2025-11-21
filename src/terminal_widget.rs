@@ -1,11 +1,5 @@
 pub mod color;
 mod input;
-mod parser;
-mod parser_csi;
-mod parser_dcs;
-mod parser_osc;
-mod parser_sgr; // newly added SGR parser module
-mod parser_vt100;
 mod render;
 
 use eframe::egui::{self, Color32};
@@ -27,7 +21,6 @@ pub struct TerminalWidget {
     pub show_cursor: bool,
     tokenizer: SequenceTokenizer,
     dispatcher: SequenceDispatcher,
-    pty_buffer: Vec<u8>,
     selection_start: Option<(usize, usize)>,
     selection_end: Option<(usize, usize)>,
     bracket_paste_mode: bool,
@@ -55,7 +48,6 @@ impl TerminalWidget {
             show_cursor: true,
             tokenizer: SequenceTokenizer::new(),
             dispatcher: SequenceDispatcher::new(),
-            pty_buffer: Vec::new(),
             selection_start: None,
             selection_end: None,
             bracket_paste_mode: false,
@@ -170,15 +162,6 @@ impl TerminalWidget {
         }
 
         visible_lines
-    }
-
-    fn add_line_to_scrollback(&mut self, line: Vec<TerminalCell>) {
-        self.scrollback_buffer.push(line);
-
-        // Limit the size of scrollback buffer
-        if self.scrollback_buffer.len() > self.max_scroll_lines {
-            self.scrollback_buffer.remove(0);
-        }
     }
 
     fn adjust_scrollback_buffer_width(&mut self, new_width: usize) {

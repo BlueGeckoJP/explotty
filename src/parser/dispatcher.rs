@@ -2,12 +2,14 @@ use crate::parser::{
     csi_sequence_handler::CsiSequenceHandler, dcs_sequence_handler::DcsSequenceHandler,
     handler_context::HandlerContext, osc_sequence_handler::OscSequenceHandler,
     sequence_handler::SequenceHandler, sequence_token::SequenceToken,
+    vt100_sequence_handler::VT100SequenceHandler,
 };
 
 pub struct SequenceDispatcher {
     csi_handler: CsiSequenceHandler,
     osc_handler: OscSequenceHandler,
     dcs_handler: DcsSequenceHandler,
+    vt100_handler: VT100SequenceHandler,
 }
 
 impl SequenceDispatcher {
@@ -16,6 +18,7 @@ impl SequenceDispatcher {
             csi_handler: CsiSequenceHandler,
             osc_handler: OscSequenceHandler,
             dcs_handler: DcsSequenceHandler,
+            vt100_handler: VT100SequenceHandler,
         }
     }
 
@@ -29,6 +32,9 @@ impl SequenceDispatcher {
             }
             SequenceToken::Dcs(seq) => {
                 self.dcs_handler.handle(ctx, &seq);
+            }
+            SequenceToken::VT100(seq) => {
+                self.vt100_handler.handle(ctx, &seq);
             }
             SequenceToken::Character(ch) => {
                 ctx.buffer.put_char(ch);

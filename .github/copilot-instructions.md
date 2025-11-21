@@ -13,7 +13,7 @@ Always reference these instructions first and fallback to search or bash command
 - Run tests: `cargo test` -- takes under 2 seconds (no tests currently exist).
 
 ### Code Quality and Validation
-- Check formatting: `cargo fmt --check` -- currently shows formatting issues that need fixing
+- Check formatting: `cargo fmt --check`
 - Fix formatting: `cargo fmt`
 - Run linting: `cargo clippy` -- takes about 1 minute. NEVER CANCEL. Set timeout to 3+ minutes.
 - Always run `cargo fmt` and `cargo clippy` before completing work or CI may fail.
@@ -32,36 +32,56 @@ The application supports TOML configuration files in these locations (checked in
 
 Configuration options:
 - `ui_font_family`: Optional UI font family name
-- `terminal_font_family`: Optional terminal font family name  
+- `terminal_font_family`: Optional terminal font family name
 - `terminal_fallback_font_families`: Optional array of fallback font families for terminal
 
 ## Project Structure
 
-### Source Files
-- `src/main.rs` - Application entry point and GTK initialization
-- `src/app.rs` - Main application struct with terminal and explorer widgets
+### Root Module Files
+- `src/main.rs` - Application entry point, GTK initialization, and CONFIG static setup
+- `src/app.rs` - Main application struct (App) with terminal and explorer widgets, PTY management
 - `src/config.rs` - Configuration loading and management
-- `src/terminal_widget/` - Terminal emulator implementation
-  - `input.rs` - Input handling and key mapping
-  - `parser.rs` - Terminal sequence parsing
-  - `parser_csi.rs` - CSI sequence handling
-  - `parser_osc.rs` - OSC sequence handling  
-  - `parser_vt100.rs` - VT100 compatibility
-  - `render.rs` - Terminal rendering
-  - `color.rs` - Color management
+- `src/terminal_widget.rs` - Terminal widget implementation and terminal state
 - `src/terminal_buffer.rs` - Terminal buffer management
-- `src/terminal_cell.rs` - Individual terminal cell representation
+- `src/terminal_cell.rs` - Individual terminal cell representation with styling
 - `src/explorer_widget.rs` - File explorer widget
 - `src/utils.rs` - Utility functions including font loading and file operations
+- `src/logging.rs` - Logging output and input for debugging
+- `src/parser.rs` - Terminal sequence parser module exports
+
+### Terminal Widget Submodule (`src/terminal_widget/`)
+- `color.rs` - Color management and ANSI color support
+- `input.rs` - Input handling and key mapping
+- `render.rs` - Terminal rendering and layout
+
+### Parser Submodule (`src/parser/`)
+- `dispatcher.rs` - Sequence dispatch logic
+- `handler_context.rs` - Context for handling terminal sequences
+- `handlers.rs` - Handler registry and routing
+- `sequence_handler.rs` - Base trait for sequence handlers
+- `sequence_token.rs` - Token representation for sequences
+- `sequence_tokenizer.rs` - Tokenization of terminal sequences
+- `handlers/` - Specific handler implementations
+  - `csi_sequence_handler.rs` - CSI (Control Sequence Introducer) handling
+  - `dcs_sequence_handler.rs` - DCS (Device Control String) handling
+  - `osc_sequence_handler.rs` - OSC (Operating System Command) handling
+  - `sgr_sequence_handler.rs` - SGR (Select Graphic Rendition) handling
+  - `vt100_sequence_handler.rs` - VT100 compatibility sequences
 
 ### Key Dependencies
-- `eframe` - GUI framework
-- `egui` - Immediate mode GUI library
-- `portable-pty` - Cross-platform PTY implementation
-- `gtk` - GTK system integration
-- `font-kit` - Font discovery and loading
+- `eframe` (0.32) - GUI framework
+- `egui_extras` (0.32) - Extended egui components
+- `portable-pty` (0.9) - Cross-platform PTY implementation
+- `gtk` (0.18) - GTK system integration
+- `font-kit` (0.14) - Font discovery and loading
 - `anyhow` - Error handling
 - `serde` + `toml` - Configuration parsing
+- `log` + `env_logger` - Logging infrastructure
+- `unicode-width` - Terminal character width calculation
+- `open` (5.3) - Open system files/URLs
+- `resvg` (0.45) - SVG rendering
+- `gio` (0.21) - GLib I/O library
+- `chrono` (0.4) - Date/time utilities
 
 ## Build Requirements
 
@@ -79,15 +99,16 @@ sudo apt-get update && sudo apt-get install -y \
 ```
 
 ### Rust Toolchain
-- Minimum Rust version: Uses 2024 edition (requires recent Rust)
+- Edition: 2024 (requires recent Rust)
 - rustfmt and clippy are available and should be used
+- Features available: `debug-outline`, `debug-logging` (for debugging)
 
 ## Timing Expectations
 
 **NEVER CANCEL BUILD OR LINT COMMANDS** - Always allow full completion:
 
 - Debug build: ~2 minutes (set timeout to 5+ minutes)
-- Release build: ~4 minutes (set timeout to 10+ minutes)  
+- Release build: ~4 minutes (set timeout to 10+ minutes)
 - Clippy linting: ~1 minute (set timeout to 3+ minutes)
 - Tests: <2 seconds (no tests currently exist)
 - Formatting check: <5 seconds
@@ -103,31 +124,57 @@ When making changes:
 
 ## Common Tasks
 
+### Adding Terminal Sequence Handlers
+1. Create new handler file in `src/parser/handlers/` implementing `SequenceHandler` trait
+2. Register handler in `src/parser/handlers.rs`
+3. Add routing logic in `src/parser/dispatcher.rs`
+4. Test with appropriate terminal sequences
+
 ### Adding New Features
-- Terminal-related features: Modify files in `src/terminal_widget/`
+- Terminal rendering: Modify `src/terminal_widget/render.rs`
+- Input handling: Extend `src/terminal_widget/input.rs`
+- Terminal state/buffer: Update `src/terminal_buffer.rs` and `src/terminal_cell.rs`
 - UI features: Modify `src/app.rs` for main application logic
-- Configuration: Update `src/config.rs` and the Config struct
+- Configuration: Update `src/config.rs`
 - File operations: Extend `src/explorer_widget.rs` or `src/utils.rs`
 
 ### Debugging Issues
 - Enable debug logging: Set `RUST_LOG=debug` environment variable
+- Use `debug-logging` feature: `cargo run --features debug-logging`
 - Check GTK initialization if application won't start
 - Font loading issues are handled in `src/utils.rs::load_system_font`
 - PTY issues are in `src/app.rs::start_pty`
+- Terminal sequence parsing: Check `src/parser/sequence_tokenizer.rs` for tokenization
+- Handler dispatch: Review `src/parser/dispatcher.rs` for routing logic
 
 ### Code Quality Checks
 Run these before submitting changes:
 ```bash
 cargo fmt                    # Fix formatting
-cargo clippy                 # Check linting (1 min)  
+cargo clippy                 # Check linting (1 min)
 cargo build                  # Verify compilation (2 min)
 cargo build --release        # Verify release build (4 min)
 ```
 
+## Architecture Notes
+
+### Terminal Processing Pipeline
+1. **Input**: User keyboard input → `src/terminal_widget/input.rs`
+2. **PTY Output**: Shell output received in `src/app.rs` → buffered
+3. **Parsing**: Terminal sequences parsed by `src/parser/sequence_tokenizer.rs`
+4. **Dispatch**: Tokens routed through `src/parser/dispatcher.rs` to appropriate handlers
+5. **Handling**: Handlers update terminal state in `src/terminal_buffer.rs`
+6. **Rendering**: `src/terminal_widget/render.rs` draws current buffer state
+
+### Configuration System
+- Static CONFIG loaded at startup in `src/main.rs`
+- Accessible globally via `crate::CONFIG`
+- Defaults used if no config file found
+- Supports font customization per-component
+
 ## Known Issues
 
 - Application requires GUI environment and cannot run headless
-- Current code has formatting issues that must be fixed with `cargo fmt`
 - No unit tests exist currently
 - Configuration file is optional - app uses defaults if not found
 
@@ -137,21 +184,24 @@ cargo build --release        # Verify release build (4 min)
 ```
 .
 ├── .git/
-├── .gitignore           # Contains `/target`
-├── Cargo.toml          # Project configuration
-├── Cargo.lock          # Dependency lock file
-└── src/                # Source code directory
+├── .gitignore              # Contains `/target`
+├── Cargo.toml             # Project configuration
+├── Cargo.lock             # Dependency lock file
+└── src/                   # Source code directory
 ```
 
 ### Cargo.toml Key Information
 - Package name: `explotty`
 - Edition: `2024`
-- Key dependencies: eframe, egui_extras, gtk, portable-pty, font-kit
-- Features: `debug-outline` available for debugging
+- Key dependencies: eframe, egui_extras, gtk, portable-pty, font-kit, log, env_logger
+- Features: `debug-outline`, `debug-logging` available for debugging
 
 ### Key Application Features
-- GUI terminal emulator with PTY support
+- GUI terminal emulator with PTY support (bash shell)
 - File explorer widget integrated in same window
+- Modular terminal sequence parser with pluggable handlers
 - Font customization via configuration
 - GTK integration for system functionality
-- VT100/ANSI terminal sequence support
+- Comprehensive ANSI/VT100 sequence support (CSI, DCS, OSC, SGR)
+- Multi-threaded PTY I/O with buffering
+- Logging infrastructure for debugging

@@ -38,7 +38,7 @@ impl SequenceHandler for SgrSequenceHandler {
 
             match token.trim_end_matches('m') {
                 // Reset
-                "0" => Self::reset_sgr(ctx),
+                "0" | "" => Self::reset_sgr(ctx),
                 // Bold
                 "1" | "01" => ctx.buffer.current_bold = true,
                 // Faint (simulate by darkening fg)

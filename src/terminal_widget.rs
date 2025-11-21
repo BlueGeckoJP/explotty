@@ -10,7 +10,14 @@ mod render;
 
 use eframe::egui::{self, Color32};
 
-use crate::{terminal_buffer::TerminalBuffer, terminal_cell::TerminalCell};
+use crate::{
+    parser::{
+        dispatcher::SequenceDispatcher, handler_context::HandlerContext,
+        sequence_tokenizer::SequenceTokenizer,
+    },
+    terminal_buffer::TerminalBuffer,
+    terminal_cell::TerminalCell,
+};
 
 pub struct TerminalWidget {
     pub buffer: TerminalBuffer,
@@ -18,6 +25,8 @@ pub struct TerminalWidget {
     pub char_width: f32,
     pub line_height: f32,
     pub show_cursor: bool,
+    tokenizer: SequenceTokenizer,
+    dispatcher: SequenceDispatcher,
     pty_buffer: Vec<u8>,
     selection_start: Option<(usize, usize)>,
     selection_end: Option<(usize, usize)>,
@@ -44,6 +53,8 @@ impl TerminalWidget {
             char_width: font_size * 0.6,
             line_height: font_size * 1.2,
             show_cursor: true,
+            tokenizer: SequenceTokenizer::new(),
+            dispatcher: SequenceDispatcher::new(),
             pty_buffer: Vec::new(),
             selection_start: None,
             selection_end: None,
@@ -178,6 +189,27 @@ impl TerminalWidget {
             } else if line.len() > new_width {
                 line.truncate(new_width);
             }
+        }
+    }
+
+    pub fn process_output(&mut self, ctx: &egui::Context, data: &[u8]) {
+        let tokens = self.tokenizer.feed(data);
+
+        for token in tokens {
+            let mut handler_ctx = HandlerContext {
+                buffer: &mut self.buffer,
+                scrollback_buffer: &mut self.scrollback_buffer,
+                decckm_mode: &mut self.decckm_mode,
+                decom_mode: &mut self.decom_mode,
+                decawm_mode: &mut self.decawm_mode,
+                reverse_video_mode: &mut self.reverse_video_mode,
+                show_cursor: &mut self.show_cursor,
+                bracket_paste_mode: &mut self.bracket_paste_mode,
+                new_line_mode: &mut self.new_line_mode,
+                ctx,
+            };
+
+            self.dispatcher.dispatch(&mut handler_ctx, token);
         }
     }
 }

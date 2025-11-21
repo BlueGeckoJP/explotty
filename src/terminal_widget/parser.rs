@@ -3,7 +3,7 @@ use eframe::egui;
 use crate::terminal_widget::TerminalWidget;
 
 impl TerminalWidget {
-    pub fn process_output(&mut self, ctx: &egui::Context, data: &[u8]) {
+    pub fn _process_output(&mut self, ctx: &egui::Context, data: &[u8]) {
         self.pty_buffer.extend_from_slice(data);
 
         let mut cursor = 0;

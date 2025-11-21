@@ -72,7 +72,7 @@ impl SequenceHandler for SgrSequenceHandler {
                 // Strikethrough
                 "9" => ctx.buffer.current_strikethrough = true,
                 // Primary font / Alternative font selections (10-19) ignored
-                "10" | "11" | "12" | "13" | "14" | "15" | "16" | "17" | "18" | "19" => {}
+                //"10" | "11" | "12" | "13" | "14" | "15" | "16" | "17" | "18" | "19" => {}
                 // Fraktur (20) ignored
                 "20" => {}
                 // Disable Bold/Faint

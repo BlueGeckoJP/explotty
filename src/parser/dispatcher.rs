@@ -49,7 +49,13 @@ impl SequenceDispatcher {
                 b'\n' => {
                     if ctx.buffer.cursor_y >= ctx.buffer.height - 1 {
                         let top_line = ctx.buffer.cells[0].clone();
+
                         ctx.scrollback_buffer.push(top_line);
+
+                        // Limit the size of scrollback buffer
+                        if ctx.scrollback_buffer.len() > *ctx.max_scroll_lines {
+                            ctx.scrollback_buffer.remove(0);
+                        }
                     }
                     ctx.buffer.new_line(*ctx.new_line_mode);
                 }

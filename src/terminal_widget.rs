@@ -200,6 +200,7 @@ impl TerminalWidget {
                 buffer: &mut self.buffer,
                 scrollback_buffer: &mut self.scrollback_buffer,
                 saved_screen_buffer: &mut self.saved_screen_buffer,
+                max_scroll_lines: &mut self.max_scroll_lines,
                 decckm_mode: &mut self.decckm_mode,
                 decom_mode: &mut self.decom_mode,
                 decawm_mode: &mut self.decawm_mode,

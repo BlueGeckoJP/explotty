@@ -6,6 +6,7 @@ pub struct HandlerContext<'a> {
     pub buffer: &'a mut TerminalBuffer,
     pub scrollback_buffer: &'a mut Vec<Vec<TerminalCell>>,
     pub saved_screen_buffer: &'a mut Option<TerminalBuffer>,
+    pub max_scroll_lines: &'a mut usize,
 
     // DEC private mode flags
     pub decckm_mode: &'a mut bool,

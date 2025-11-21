@@ -1,16 +1,19 @@
 use crate::parser::{
     csi_sequence_handler::CsiSequenceHandler, handler_context::HandlerContext,
-    sequence_handler::SequenceHandler, sequence_token::SequenceToken,
+    osc_sequence_handler::OscSequenceHandler, sequence_handler::SequenceHandler,
+    sequence_token::SequenceToken,
 };
 
 pub struct SequenceDispatcher {
     csi_handler: CsiSequenceHandler,
+    osc_handler: OscSequenceHandler,
 }
 
 impl SequenceDispatcher {
     pub fn new() -> Self {
         Self {
             csi_handler: CsiSequenceHandler,
+            osc_handler: OscSequenceHandler,
         }
     }
 
@@ -24,6 +27,9 @@ impl SequenceDispatcher {
                 } else {
                     self.csi_handler.handle(ctx, &seq);
                 }
+            }
+            SequenceToken::Osc(seq) => {
+                self.osc_handler.handle(ctx, &seq);
             }
             SequenceToken::Character(ch) => {
                 ctx.buffer.put_char(ch);

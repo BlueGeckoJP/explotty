@@ -20,13 +20,7 @@ impl SequenceDispatcher {
     pub fn dispatch(&self, ctx: &mut HandlerContext, token: SequenceToken) {
         match token {
             SequenceToken::Csi(seq) => {
-                if seq.contains('?') {
-                    // TODO: Implement VT100 private mode sequences
-                } else if seq.ends_with('m') {
-                    // TODO: Implement SGR sequences
-                } else {
-                    self.csi_handler.handle(ctx, &seq);
-                }
+                self.csi_handler.handle(ctx, &seq);
             }
             SequenceToken::Osc(seq) => {
                 self.osc_handler.handle(ctx, &seq);

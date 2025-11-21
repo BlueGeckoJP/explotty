@@ -100,9 +100,11 @@ impl SequenceTokenizer {
         }
 
         match bytes[1] {
-            b'[' => self
-                .parse_csi(&bytes[2..])
-                .map(|(s, len)| (SequenceToken::Csi(s), len + 2)),
+            b'[' => self.parse_csi(&bytes[2..]).map(|(s, len)| match s {
+                s if s.contains('?') => (SequenceToken::VT100(s), len + 2),
+                s if s.ends_with('m') => (SequenceToken::Sgr(s), len + 2),
+                _ => (SequenceToken::Csi(s), len + 2),
+            }),
             b']' => self
                 .parse_osc(&bytes[2..])
                 .map(|(s, len)| (SequenceToken::Osc(s), len + 2)),

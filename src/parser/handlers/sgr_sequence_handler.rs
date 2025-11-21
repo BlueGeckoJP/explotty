@@ -149,7 +149,7 @@ impl SequenceHandler for SgrSequenceHandler {
                 // Extended color foreground/background 38/48
                 "38" | "48" => {
                     // Expect either ;5;idx or ;2;r;g;b
-                    let is_fg = token == "38";
+                    let is_fg = token.trim_end_matches('m') == "38";
                     let Some(mode) = tokens.next() else {
                         break;
                     };

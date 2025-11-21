@@ -1,16 +1,17 @@
-mod color;
+pub mod color;
 mod input;
-mod parser;
-mod parser_csi;
-mod parser_dcs;
-mod parser_osc;
-mod parser_sgr; // newly added SGR parser module
-mod parser_vt100;
 mod render;
 
 use eframe::egui::{self, Color32};
 
-use crate::{terminal_buffer::TerminalBuffer, terminal_cell::TerminalCell};
+use crate::{
+    parser::{
+        dispatcher::SequenceDispatcher, handler_context::HandlerContext,
+        sequence_tokenizer::SequenceTokenizer,
+    },
+    terminal_buffer::TerminalBuffer,
+    terminal_cell::TerminalCell,
+};
 
 pub struct TerminalWidget {
     pub buffer: TerminalBuffer,
@@ -18,7 +19,8 @@ pub struct TerminalWidget {
     pub char_width: f32,
     pub line_height: f32,
     pub show_cursor: bool,
-    pty_buffer: Vec<u8>,
+    tokenizer: SequenceTokenizer,
+    dispatcher: SequenceDispatcher,
     selection_start: Option<(usize, usize)>,
     selection_end: Option<(usize, usize)>,
     bracket_paste_mode: bool,
@@ -44,7 +46,8 @@ impl TerminalWidget {
             char_width: font_size * 0.6,
             line_height: font_size * 1.2,
             show_cursor: true,
-            pty_buffer: Vec::new(),
+            tokenizer: SequenceTokenizer::new(),
+            dispatcher: SequenceDispatcher::new(),
             selection_start: None,
             selection_end: None,
             bracket_paste_mode: false,
@@ -161,15 +164,6 @@ impl TerminalWidget {
         visible_lines
     }
 
-    fn add_line_to_scrollback(&mut self, line: Vec<TerminalCell>) {
-        self.scrollback_buffer.push(line);
-
-        // Limit the size of scrollback buffer
-        if self.scrollback_buffer.len() > self.max_scroll_lines {
-            self.scrollback_buffer.remove(0);
-        }
-    }
-
     fn adjust_scrollback_buffer_width(&mut self, new_width: usize) {
         // Adjust existing scrollback lines to new width
         for line in &mut self.scrollback_buffer {
@@ -178,6 +172,29 @@ impl TerminalWidget {
             } else if line.len() > new_width {
                 line.truncate(new_width);
             }
+        }
+    }
+
+    pub fn process_output(&mut self, ctx: &egui::Context, data: &[u8]) {
+        let tokens = self.tokenizer.feed(data);
+
+        for token in tokens {
+            let mut handler_ctx = HandlerContext {
+                buffer: &mut self.buffer,
+                scrollback_buffer: &mut self.scrollback_buffer,
+                saved_screen_buffer: &mut self.saved_screen_buffer,
+                max_scroll_lines: &mut self.max_scroll_lines,
+                decckm_mode: &mut self.decckm_mode,
+                decom_mode: &mut self.decom_mode,
+                decawm_mode: &mut self.decawm_mode,
+                reverse_video_mode: &mut self.reverse_video_mode,
+                show_cursor: &mut self.show_cursor,
+                bracket_paste_mode: &mut self.bracket_paste_mode,
+                new_line_mode: &mut self.new_line_mode,
+                ctx,
+            };
+
+            self.dispatcher.dispatch(&mut handler_ctx, token);
         }
     }
 }

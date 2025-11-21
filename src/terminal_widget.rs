@@ -1,4 +1,4 @@
-mod color;
+pub mod color;
 mod input;
 mod parser;
 mod parser_csi;

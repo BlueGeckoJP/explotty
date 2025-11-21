@@ -71,10 +71,6 @@ impl SequenceDispatcher {
                 b'\x08' => ctx.buffer.backspace(),
                 _ => {}
             },
-            #[allow(unused)]
-            _ => {
-                warn!("Unhandled sequence token: {:?}", token);
-            }
         }
     }
 }

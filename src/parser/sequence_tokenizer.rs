@@ -33,6 +33,10 @@ impl SequenceTokenizer {
                     tokens.push(SequenceToken::ControlChar(b'\x08'));
                     cursor += 1;
                 }
+                b'\x03' => {
+                    tokens.push(SequenceToken::ControlChar(b'\x03'));
+                    cursor += 1;
+                }
                 b'\x1b' => {
                     // Detect escape sequences
                     if let Some((token, consumed)) =

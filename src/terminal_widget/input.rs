@@ -34,6 +34,8 @@ impl TerminalWidget {
 
                             text_to_copy = Some(selected_text);
                         }
+
+                        output.extend_from_slice(b"\x03");
                     }
                     egui::Event::Paste(paste) => {
                         let mut paste_text = paste.clone();
@@ -44,7 +46,10 @@ impl TerminalWidget {
                         output.extend_from_slice(paste_text.as_bytes());
                     }
                     egui::Event::Key {
-                        key, pressed: true, ..
+                        key,
+                        pressed: true,
+                        modifiers,
+                        ..
                     } => {
                         match key {
                             // Don't process navigation keys that should only scroll
@@ -52,7 +57,7 @@ impl TerminalWidget {
                                 // These are handled in handle_scroll
                                 continue;
                             }
-                            egui::Key::Home | egui::Key::End if i.modifiers.ctrl => {
+                            egui::Key::Home | egui::Key::End if modifiers.ctrl => {
                                 // These are handled in handle_scroll
                                 continue;
                             }
@@ -154,8 +159,11 @@ impl TerminalWidget {
                             egui::Key::Escape => {
                                 output.extend_from_slice(b"\x1b");
                             }
-                            egui::Key::U if i.modifiers.ctrl => {
+                            egui::Key::U if modifiers.ctrl => {
                                 output.extend_from_slice(b"\x15");
+                            }
+                            egui::Key::C if modifiers.ctrl => {
+                                output.extend_from_slice(b"\x03");
                             }
                             _ => {}
                         }

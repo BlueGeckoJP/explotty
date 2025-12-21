@@ -69,6 +69,11 @@ impl SequenceDispatcher {
                     }
                 }
                 b'\x08' => ctx.buffer.backspace(),
+                b'\x03' => {
+                    ctx.buffer.put_char('^');
+                    ctx.buffer.put_char('C');
+                    ctx.buffer.new_line(*ctx.new_line_mode);
+                }
                 _ => {}
             },
         }

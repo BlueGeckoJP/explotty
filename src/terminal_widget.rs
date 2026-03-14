@@ -35,6 +35,7 @@ pub struct TerminalWidget {
     max_scroll_lines: usize,
     scrollback_buffer: Vec<Vec<TerminalCell>>,
     new_line_mode: bool,
+    empty_line: Vec<TerminalCell>,
 }
 
 impl TerminalWidget {
@@ -61,6 +62,7 @@ impl TerminalWidget {
             max_scroll_lines: 1000,
             scrollback_buffer: Vec::new(),
             new_line_mode: true,
+            empty_line: vec![TerminalCell::default(); width],
         }
     }
 
@@ -133,10 +135,10 @@ impl TerminalWidget {
         response
     }
 
-    fn get_visible_lines(&self) -> Vec<Vec<TerminalCell>> {
+    fn get_visible_lines(&self) -> Vec<&[TerminalCell]> {
         if self.scroll_offset == 0 {
             // At the bottom, show current buffer
-            return self.buffer.cells.clone();
+            return self.buffer.cells.iter().map(|l| l.as_slice()).collect();
         }
 
         let mut visible_lines = Vec::new();
@@ -147,16 +149,16 @@ impl TerminalWidget {
             if line_index_from_bottom < self.buffer.height {
                 // This line is in the current buffer
                 let buffer_line_index = self.buffer.height - 1 - line_index_from_bottom;
-                visible_lines.push(self.buffer.cells[buffer_line_index].clone());
+                visible_lines.push(self.buffer.cells[buffer_line_index].as_slice());
             } else {
                 // This line is in the scrollback buffer
                 let scrollback_index = line_index_from_bottom - self.buffer.height;
                 if scrollback_index < self.scrollback_buffer.len() {
                     let scrollback_line_index = self.scrollback_buffer.len() - 1 - scrollback_index;
-                    visible_lines.push(self.scrollback_buffer[scrollback_line_index].clone());
+                    visible_lines.push(self.scrollback_buffer[scrollback_line_index].as_slice());
                 } else {
                     // Empty line if we're beyond available history
-                    visible_lines.push(vec![TerminalCell::default(); self.buffer.width]);
+                    visible_lines.push(self.empty_line.as_slice());
                 }
             }
         }
@@ -173,6 +175,8 @@ impl TerminalWidget {
                 line.truncate(new_width);
             }
         }
+
+        self.empty_line.resize(new_width, TerminalCell::default());
     }
 
     pub fn process_output(&mut self, ctx: &egui::Context, data: &[u8]) {

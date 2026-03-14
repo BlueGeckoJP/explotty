@@ -155,14 +155,14 @@ impl SequenceHandler for SgrSequenceHandler {
                     };
                     match mode {
                         "5" => {
-                            if let Some(idx_str) = tokens.next()
-                                && let Ok(idx) = idx_str.parse::<u8>()
-                            {
-                                let col = color::process_256_color_palette(idx);
-                                if is_fg {
-                                    ctx.buffer.current_fg_color = col;
-                                } else {
-                                    ctx.buffer.current_bg_color = col;
+                            if let Some(idx_str) = tokens.next() {
+                                if let Ok(idx) = idx_str.parse::<u8>() {
+                                    let col = color::process_256_color_palette(idx);
+                                    if is_fg {
+                                        ctx.buffer.current_fg_color = col;
+                                    } else {
+                                        ctx.buffer.current_bg_color = col;
+                                    }
                                 }
                             }
                         }

@@ -85,25 +85,25 @@ impl TerminalWidget {
         // Selection logic
         let rect = response.rect;
 
-        if response.drag_started()
-            && let Some(pos) = response.hover_pos()
-        {
-            let col = ((pos.x - rect.left()) / self.char_width).floor() as usize;
-            let row = ((pos.y - rect.top()) / self.line_height).floor() as usize;
-            let clamped_col = col.min(self.buffer.width.saturating_sub(1));
-            let clamped_row = row.min(self.buffer.height.saturating_sub(1));
-            self.selection_start = Some((clamped_col, clamped_row));
-            self.selection_end = Some((clamped_col, clamped_row));
+        if response.drag_started() {
+            if let Some(pos) = response.hover_pos() {
+                let col = ((pos.x - rect.left()) / self.char_width).floor() as usize;
+                let row = ((pos.y - rect.top()) / self.line_height).floor() as usize;
+                let clamped_col = col.min(self.buffer.width.saturating_sub(1));
+                let clamped_row = row.min(self.buffer.height.saturating_sub(1));
+                self.selection_start = Some((clamped_col, clamped_row));
+                self.selection_end = Some((clamped_col, clamped_row));
+            }
         }
 
-        if response.dragged()
-            && let Some(pos) = response.hover_pos()
-        {
-            let col = ((pos.x - rect.left()) / self.char_width).floor() as usize;
-            let row = ((pos.y - rect.top()) / self.line_height).floor() as usize;
-            let clamped_col = col.min(self.buffer.width.saturating_sub(1));
-            let clamped_row = row.min(self.buffer.height.saturating_sub(1));
-            self.selection_end = Some((clamped_col, clamped_row));
+        if response.dragged() {
+            if let Some(pos) = response.hover_pos() {
+                let col = ((pos.x - rect.left()) / self.char_width).floor() as usize;
+                let row = ((pos.y - rect.top()) / self.line_height).floor() as usize;
+                let clamped_col = col.min(self.buffer.width.saturating_sub(1));
+                let clamped_row = row.min(self.buffer.height.saturating_sub(1));
+                self.selection_end = Some((clamped_col, clamped_row));
+            }
         }
 
         if response.clicked() {

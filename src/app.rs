@@ -127,11 +127,11 @@ impl App {
                         }
                     };
 
-                    if let Some(data) = data_to_write
-                        && let Err(e) = writer.write_all(&data)
-                    {
-                        error!("Error writing to PTY: {e}");
-                        break;
+                    if let Some(data) = data_to_write {
+                        if let Err(e) = writer.write_all(&data) {
+                            error!("Error writing to PTY: {e}");
+                            break;
+                        }
                     }
 
                     thread::sleep(Duration::from_millis(10));

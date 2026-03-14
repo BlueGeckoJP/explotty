@@ -152,9 +152,10 @@ fn find_icon(mime_type: &str, size: i32) -> Option<String> {
                 icon_theme
                     .clone()?
                     .lookup_icon(&name, size, gtk::IconLookupFlags::empty())
-                && let Some(filename) = icon_info.filename()
             {
-                return Some(filename.to_string_lossy().to_string());
+                if let Some(filename) = icon_info.filename() {
+                    return Some(filename.to_string_lossy().to_string());
+                }
             }
         }
     }

@@ -1,6 +1,6 @@
 use eframe::egui::Color32;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct TerminalCell {
     pub character: char,
     pub fg_color: Color32,

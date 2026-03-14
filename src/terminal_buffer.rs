@@ -191,3 +191,40 @@ impl TerminalBuffer {
         self.cursor_x = 0;
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_backspace() {
+        let mut buffer = TerminalBuffer::new(10, 10);
+
+        // Test backspace at (0, 0) - should do nothing
+        buffer.backspace();
+        assert_eq!(buffer.cursor_x, 0);
+        assert_eq!(buffer.cursor_y, 0);
+
+        // Put some characters
+        buffer.put_char('A');
+        buffer.put_char('B');
+        assert_eq!(buffer.cursor_x, 2);
+        assert_eq!(buffer.cells[0][0].character, 'A');
+        assert_eq!(buffer.cells[0][1].character, 'B');
+
+        // Backspace once
+        buffer.backspace();
+        assert_eq!(buffer.cursor_x, 1);
+        assert_eq!(buffer.cells[0][1], TerminalCell::default());
+        assert_eq!(buffer.cells[0][0].character, 'A');
+
+        // Backspace again
+        buffer.backspace();
+        assert_eq!(buffer.cursor_x, 0);
+        assert_eq!(buffer.cells[0][0], TerminalCell::default());
+
+        // Backspace again at 0
+        buffer.backspace();
+        assert_eq!(buffer.cursor_x, 0);
+    }
+}

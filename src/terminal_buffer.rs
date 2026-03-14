@@ -146,6 +146,41 @@ impl TerminalBuffer {
         self.cells[self.scroll_region_bottom] = vec![TerminalCell::default(); self.width];
     }
 
+    pub fn scroll_down(&mut self) {
+        for y in (self.scroll_region_top + 1..=self.scroll_region_bottom).rev() {
+            self.cells[y] = self.cells[y - 1].clone();
+        }
+        self.cells[self.scroll_region_top] = vec![TerminalCell::default(); self.width];
+    }
+
+    pub fn insert_lines(&mut self, num: usize) {
+        let bottom = self.scroll_region_bottom;
+        let y = self.cursor_y;
+        if y > bottom {
+            return;
+        }
+        for _ in 0..num {
+            for i in (y + 1..=bottom).rev() {
+                self.cells[i] = self.cells[i - 1].clone();
+            }
+            self.cells[y] = vec![TerminalCell::default(); self.width];
+        }
+    }
+
+    pub fn delete_lines(&mut self, num: usize) {
+        let bottom = self.scroll_region_bottom;
+        let y = self.cursor_y;
+        if y > bottom {
+            return;
+        }
+        for _ in 0..num {
+            for i in y..bottom {
+                self.cells[i] = self.cells[i + 1].clone();
+            }
+            self.cells[bottom] = vec![TerminalCell::default(); self.width];
+        }
+    }
+
     pub fn clear_screen(&mut self) {
         for row in &mut self.cells {
             for cell in row {

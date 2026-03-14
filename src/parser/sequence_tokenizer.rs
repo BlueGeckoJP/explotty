@@ -112,10 +112,37 @@ impl SequenceTokenizer {
             b']' => self
                 .parse_osc(&bytes[2..])
                 .map(|(s, len)| (SequenceToken::Osc(s), len + 2)),
-            b'(' => self
+            b'(' | b')' | b'*' | b'+' => {
+                // Character set selection (G0, G1, G2, G3)
+                // E.g., ESC ( B
+                if bytes.len() >= 3 {
+                    let sequence = String::from_utf8_lossy(&bytes[1..=2]).to_string();
+                    Some((SequenceToken::Esc(sequence), 3))
+                } else {
+                    None
+                }
+            }
+            b'P' => self // DCS
                 .parse_dcs(&bytes[2..])
                 .map(|(s, len)| (SequenceToken::Dcs(s), len + 2)),
-            _ => None,
+            b'7' | b'8' | b'D' | b'E' | b'M' | b'Z' | b'c' | b'=' | b'>' | b'H' | b'N' | b'O' => {
+                let sequence = String::from_utf8_lossy(&bytes[1..=1]).to_string();
+                Some((SequenceToken::Esc(sequence), 2))
+            }
+            b'#' => {
+                // ESC # 3, ESC # 4, ESC # 5, ESC # 6, ESC # 8
+                if bytes.len() >= 3 {
+                    let sequence = String::from_utf8_lossy(&bytes[1..=2]).to_string();
+                    Some((SequenceToken::Esc(sequence), 3))
+                } else {
+                    None
+                }
+            }
+            _ => {
+                // Unknown 2-byte escape sequence fallback
+                let sequence = String::from_utf8_lossy(&bytes[1..=1]).to_string();
+                Some((SequenceToken::Esc(sequence), 2))
+            }
         }
     }
 

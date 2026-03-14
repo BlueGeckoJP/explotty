@@ -164,14 +164,32 @@ impl SequenceHandler for CsiSequenceHandler {
             }
 
             // Scroll Control - Scroll Up
-            // ch if ch.ends_with('S') => {}
+            ch if ch.ends_with('S') => {
+                let num = sequence.trim_end_matches('S').parse::<usize>().unwrap_or(1);
+                for _ in 0..num {
+                    ctx.buffer.scroll_up();
+                }
+            }
 
             // Scroll Control - Scroll Down
-            // ch if ch.ends_with('T') => {}
+            ch if ch.ends_with('T') => {
+                let num = sequence.trim_end_matches('T').parse::<usize>().unwrap_or(1);
+                for _ in 0..num {
+                    ctx.buffer.scroll_down();
+                }
+            }
 
             // Insert/delete lines/characters
-            // ch if ch.ends_with('L') => {} // Insert lines
-            // ch if ch.ends_with('M') => {} // Delete lines
+            ch if ch.ends_with('L') => {
+                // Insert lines
+                let num = sequence.trim_end_matches('L').parse::<usize>().unwrap_or(1);
+                ctx.buffer.insert_lines(num);
+            }
+            ch if ch.ends_with('M') => {
+                // Delete lines
+                let num = sequence.trim_end_matches('M').parse::<usize>().unwrap_or(1);
+                ctx.buffer.delete_lines(num);
+            }
             ch if ch.ends_with('P') => {
                 // Delete characters
                 let num = sequence.trim_end_matches('P').parse::<usize>().unwrap_or(1);
@@ -184,11 +202,51 @@ impl SequenceHandler for CsiSequenceHandler {
                     }
                 }
             }
-            // ch if ch.ends_with('X') => {} // Erase characters
-            // ch if ch.ends_with('@') => {} // Insert characters
+            ch if ch.ends_with('X') => {
+                // Erase characters
+                let num = sequence.trim_end_matches('X').parse::<usize>().unwrap_or(1);
+                for i in 0..num {
+                    let x = ctx.buffer.cursor_x + i;
+                    if x < ctx.buffer.width {
+                        ctx.buffer.cells[ctx.buffer.cursor_y][x] = TerminalCell::default();
+                    }
+                }
+            }
+            ch if ch.ends_with('@') => {
+                // Insert characters
+                let num = sequence.trim_end_matches('@').parse::<usize>().unwrap_or(1);
+                for _ in 0..num {
+                    if ctx.buffer.cursor_x < ctx.buffer.width {
+                        ctx.buffer.cells[ctx.buffer.cursor_y].insert(ctx.buffer.cursor_x, TerminalCell::default());
+                        ctx.buffer.cells[ctx.buffer.cursor_y].pop();
+                    }
+                }
+            }
 
             // Set Mode/Reset Mode
-            // Not implemented yet
+            ch if ch.ends_with('h') && !sequence.starts_with('?') => {
+                // RM - Set Mode
+                // E.g., Insert Mode = 4
+                let params: Vec<&str> = sequence.trim_end_matches('h').split(';').collect();
+                for param in params {
+                    if param == "4" {
+                        // Insert Mode
+                        // Not strictly implementing full insert vs replace mode here,
+                        // but acknowledging it.
+                        warn!("Set Insert Mode (IRM)");
+                    }
+                }
+            }
+            ch if ch.ends_with('l') && !sequence.starts_with('?') => {
+                // SM - Reset Mode
+                let params: Vec<&str> = sequence.trim_end_matches('l').split(';').collect();
+                for param in params {
+                    if param == "4" {
+                        // Replace Mode
+                        warn!("Reset Insert Mode (Replace Mode)");
+                    }
+                }
+            }
 
             // CSI n d (Vertical Line Position Absolute - VPA)
             ch if ch.ends_with('d') => {

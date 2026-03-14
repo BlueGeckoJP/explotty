@@ -3,7 +3,7 @@ use crate::parser::{
     handlers::{
         csi_sequence_handler::CsiSequenceHandler, dcs_sequence_handler::DcsSequenceHandler,
         osc_sequence_handler::OscSequenceHandler, sgr_sequence_handler::SgrSequenceHandler,
-        vt100_sequence_handler::VT100SequenceHandler,
+        vt100_sequence_handler::VT100SequenceHandler, esc_sequence_handler::EscSequenceHandler,
     },
     sequence_handler::SequenceHandler,
     sequence_token::SequenceToken,
@@ -15,6 +15,7 @@ pub struct SequenceDispatcher {
     dcs_handler: DcsSequenceHandler,
     vt100_handler: VT100SequenceHandler,
     sgr_handler: SgrSequenceHandler,
+    esc_handler: EscSequenceHandler,
 }
 
 impl SequenceDispatcher {
@@ -25,11 +26,15 @@ impl SequenceDispatcher {
             dcs_handler: DcsSequenceHandler,
             vt100_handler: VT100SequenceHandler,
             sgr_handler: SgrSequenceHandler,
+            esc_handler: EscSequenceHandler,
         }
     }
 
     pub fn dispatch(&self, ctx: &mut HandlerContext, token: SequenceToken) {
         match token {
+            SequenceToken::Esc(seq) => {
+                self.esc_handler.handle(ctx, &seq);
+            }
             SequenceToken::Csi(seq) => {
                 self.csi_handler.handle(ctx, &seq);
             }
